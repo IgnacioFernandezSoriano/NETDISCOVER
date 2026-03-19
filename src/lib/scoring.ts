@@ -94,6 +94,10 @@ export function getMaturityColor(level: string): string {
 
 // Per-phase descriptions for the phase score cards
 export const PHASE_DESCRIPTIONS: Record<string, { en: string; es: string }> = {
+  phase0: {
+    en: 'Regulatory and institutional context: independence of the regulator, legal framework, and strategic vision for postal quality.',
+    es: 'Contexto regulatorio e institucional: independencia del regulador, marco legal y visión estratégica para la calidad postal.',
+  },
   phase1: {
     en: 'Capacity to measure end-to-end delivery times using independent panels aligned with UPU S58/S59 standards.',
     es: 'Capacidad para medir tiempos de entrega extremo a extremo mediante paneles independientes alineados con los estándares UPU S58/S59.',

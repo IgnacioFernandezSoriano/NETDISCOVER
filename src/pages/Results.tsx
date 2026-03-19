@@ -5,7 +5,7 @@ import {
   RadarChart, PolarGrid, PolarAngleAxis, Radar, ResponsiveContainer,
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Cell
 } from 'recharts'
-import { Download, Loader2, AlertCircle, ChevronDown, ChevronUp, Zap, TrendingUp, ArrowRight, Clock, Target, Map, Edit3 } from 'lucide-react'
+import { Download, Loader2, AlertCircle, ChevronDown, ChevronUp, Zap, TrendingUp, ArrowRight, Clock, Target, Edit3, CheckCircle2 } from 'lucide-react'
 import Navbar from '../components/Navbar'
 import Footer from '../components/Footer'
 import { supabase } from '../lib/supabase'
@@ -13,6 +13,7 @@ import { getMaturityLevel, getMaturityColor, getNextMaturityLevel, PHASE_DESCRIP
 import type { ScoreResult, Gap, ActionItem, GuestSession, LLMAnalysis } from '../lib/supabase'
 
 const PHASE_COLORS: Record<string, string> = {
+  phase0: '#64748B',
   phase1: '#0077C8',
   phase2: '#7C3AED',
   phase3: '#059669',
@@ -20,6 +21,16 @@ const PHASE_COLORS: Record<string, string> = {
   phase5: '#DC2626',
   phase6: '#0891B2',
   phase7: '#7C3AED',
+}
+
+// Maturity levels in order
+const MATURITY_LEVELS = ['Initial', 'Developing', 'Defined', 'Managed', 'Optimized']
+const MATURITY_COLORS: Record<string, string> = {
+  Initial: '#EF4444',
+  Developing: '#F97316',
+  Defined: '#EAB308',
+  Managed: '#22C55E',
+  Optimized: '#0077C8',
 }
 
 function MaturityBadge({ level }: { level: string }) {
@@ -32,29 +43,120 @@ function MaturityBadge({ level }: { level: string }) {
 }
 
 function PriorityBadge({ priority }: { priority: string }) {
-  const cls = `priority-${priority}`
+  const colors: Record<string, string> = {
+    high: 'bg-red-50 text-red-700',
+    medium: 'bg-amber-50 text-amber-700',
+    low: 'bg-green-50 text-green-700',
+  }
   return (
-    <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-semibold ${cls}`}>
+    <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-semibold ${colors[priority] ?? 'bg-gray-50 text-gray-600'}`}>
       {priority.toUpperCase()}
     </span>
   )
 }
 
-function HorizonBadge({ horizon, t }: { horizon: string; t: (k: string) => string }) {
-  const colors: Record<string, string> = {
-    short: 'bg-blue-50 text-blue-700',
-    medium: 'bg-purple-50 text-purple-700',
-    long: 'bg-gray-50 text-gray-600',
+function HorizonBadge({ horizon }: { horizon: string }) {
+  const styles: Record<string, { bg: string; text: string; label: string }> = {
+    short: { bg: '#EFF6FF', text: '#1D4ED8', label: '0–6 months' },
+    medium: { bg: '#F5F3FF', text: '#6D28D9', label: '6–18 months' },
+    long: { bg: '#F0FDF4', text: '#15803D', label: '18+ months' },
   }
-  const labels: Record<string, string> = { short: '0–6 months', medium: '6–18 months', long: '18+ months' }
+  const s = styles[horizon] ?? styles.long
   return (
-    <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-medium ${colors[horizon] ?? 'bg-gray-50 text-gray-600'}`}>
+    <span
+      className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-medium"
+      style={{ background: s.bg, color: s.text }}
+    >
       <Clock size={10} />
-      {labels[horizon] ?? horizon}
+      {s.label}
     </span>
   )
 }
 
+// ── Horizontal Maturity Timeline ─────────────────────────────────────────────
+function MaturityTimeline({ currentLevel, t }: { currentLevel: string; t: (k: string) => string }) {
+  const currentIdx = MATURITY_LEVELS.indexOf(currentLevel)
+
+  return (
+    <div className="card p-6 overflow-x-auto">
+      <h2 className="section-heading text-base font-bold mb-2" style={{ color: 'var(--brand-navy)' }}>
+        Maturity Roadmap
+      </h2>
+      <p className="text-xs text-gray-400 mb-6">{t('results.roadmap.sub')}</p>
+
+      {/* Timeline track */}
+      <div className="relative min-w-[600px]">
+        {/* Connector line */}
+        <div className="absolute top-8 left-[10%] right-[10%] h-1 rounded-full" style={{ background: '#E5E7EB' }} />
+        {/* Filled progress */}
+        <div
+          className="absolute top-8 left-[10%] h-1 rounded-full transition-all duration-700"
+          style={{
+            background: 'linear-gradient(90deg, #EF4444, #F97316, #EAB308, #22C55E, #0077C8)',
+            width: `${(currentIdx / (MATURITY_LEVELS.length - 1)) * 80}%`,
+          }}
+        />
+
+        {/* Nodes */}
+        <div className="flex justify-between relative z-10">
+          {MATURITY_LEVELS.map((level, idx) => {
+            const isPast = idx < currentIdx
+            const isCurrent = idx === currentIdx
+            const isFuture = idx > currentIdx
+            const color = MATURITY_COLORS[level]
+
+            return (
+              <div key={level} className="flex flex-col items-center gap-2 flex-1">
+                {/* Node circle */}
+                <div
+                  className="w-16 h-16 rounded-full flex items-center justify-center border-4 transition-all duration-300 shadow-sm"
+                  style={{
+                    borderColor: isFuture ? '#E5E7EB' : color,
+                    background: isCurrent ? color : isPast ? `${color}20` : '#F9FAFB',
+                    boxShadow: isCurrent ? `0 0 0 6px ${color}25` : undefined,
+                  }}
+                >
+                  {isPast ? (
+                    <CheckCircle2 size={24} style={{ color }} />
+                  ) : isCurrent ? (
+                    <span className="text-white font-black text-sm">NOW</span>
+                  ) : (
+                    <span className="text-xs font-bold" style={{ color: '#D1D5DB' }}>{idx + 1}</span>
+                  )}
+                </div>
+
+                {/* Label */}
+                <div className="text-center">
+                  <p
+                    className="text-xs font-bold"
+                    style={{ color: isFuture ? '#9CA3AF' : color }}
+                  >
+                    {level}
+                  </p>
+                  {isCurrent && (
+                    <span
+                      className="inline-block mt-1 text-xs px-2 py-0.5 rounded-full font-semibold text-white"
+                      style={{ background: color }}
+                    >
+                      {t('results.roadmap.current')}
+                    </span>
+                  )}
+                  {isFuture && idx === currentIdx + 1 && (
+                    <span className="inline-block mt-1 text-xs px-2 py-0.5 rounded-full font-medium" style={{ background: '#F3F4F6', color: '#6B7280' }}>
+                      {t('results.roadmap.next')}
+                    </span>
+                  )}
+                </div>
+              </div>
+            )
+          })}
+        </div>
+      </div>
+    </div>
+  )
+}
+
+// ── LLM Analysis Section ─────────────────────────────────────────────────────
 function LLMSection({ analysis, t, lang }: { analysis: LLMAnalysis; t: (k: string) => string; lang: string }) {
   const [expanded, setExpanded] = useState<string | null>('summary')
 
@@ -162,6 +264,7 @@ function LLMSection({ analysis, t, lang }: { analysis: LLMAnalysis; t: (k: strin
   )
 }
 
+// ── Main Component ────────────────────────────────────────────────────────────
 export default function Results() {
   const location = useLocation()
   const navigate = useNavigate()
@@ -190,8 +293,9 @@ export default function Results() {
 
   const token = location.state?.token ?? searchParams.get('token') ?? localStorage.getItem('nd_token')
 
+  // Load session + scores from Supabase if not in state
   useEffect(() => {
-    if (scores || !token) return
+    if ((scores && session) || !token) return
     async function load() {
       setLoading(true)
       const { data } = await supabase
@@ -201,42 +305,21 @@ export default function Results() {
         .single()
       if (data) {
         setSession(data)
-        setScores(data.scores)
-        setGaps(data.gaps ?? [])
-        setActionPlan(data.action_plan ?? [])
-        setLlmAnalysis(data.llm_analysis)
+        if (!scores) {
+          setScores(data.scores)
+          setGaps(data.gaps ?? [])
+          setActionPlan(data.action_plan ?? [])
+        }
+        if (!forceRegenerate && data.llm_analysis) {
+          setLlmAnalysis(data.llm_analysis)
+        }
       }
       setLoading(false)
     }
     load()
-  }, [token, scores])
+  }, [token])
 
-  // Also load session info when we have scores from state but no session
-  useEffect(() => {
-    if (session || !token) return
-    async function loadSession() {
-      const { data } = await supabase
-        .from('guest_sessions')
-        .select('*')
-        .eq('token', token)
-        .single()
-      if (data) setSession(data)
-    }
-    loadSession()
-  }, [token, session])
-
-  // Auto-generate analysis once session and scores are ready
-  // If forceRegenerate (came from edit mode), clear existing analysis and regenerate
-  useEffect(() => {
-    if (analysisTriggered || loadingAnalysis || !scores || !session) return
-    if (llmAnalysis && !forceRegenerate) return
-    setAnalysisTriggered(true)
-    if (forceRegenerate) setLlmAnalysis(null)
-    handleGenerateAnalysis()
-  }, [scores, session, llmAnalysis, loadingAnalysis, analysisTriggered, forceRegenerate])
-
-  const handleGenerateAnalysis = async () => {
-    if (!scores || !session) return
+  const handleGenerateAnalysis = useCallback(async (currentScores: ScoreResult, currentSession: GuestSession) => {
     setLoadingAnalysis(true)
     setAnalysisError(null)
     try {
@@ -244,12 +327,12 @@ export default function Results() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          scores,
+          scores: currentScores,
           gaps,
-          institution: session.organization ?? 'Unknown',
-          entityType: session.entity_type ?? 'regulator',
-          country: session.country,
-          respondentName: session.name,
+          institution: currentSession.organization ?? currentSession.name ?? 'Unknown',
+          entityType: currentSession.entity_type ?? 'regulator',
+          country: currentSession.country,
+          respondentName: currentSession.name,
           lang,
         }),
       })
@@ -267,10 +350,17 @@ export default function Results() {
     } finally {
       setLoadingAnalysis(false)
     }
-  }
+  }, [gaps, lang, t, token])
+
+  // Auto-generate analysis once session and scores are both ready
+  useEffect(() => {
+    if (analysisTriggered || loadingAnalysis || !scores || !session) return
+    if (llmAnalysis && !forceRegenerate) return
+    setAnalysisTriggered(true)
+    handleGenerateAnalysis(scores, session)
+  }, [scores, session, llmAnalysis, loadingAnalysis, analysisTriggered, forceRegenerate, handleGenerateAnalysis])
 
   const handleDownloadPDF = useCallback(() => {
-    // Trigger browser print dialog which can save as PDF
     window.print()
   }, [])
 
@@ -309,7 +399,10 @@ export default function Results() {
   const maturityLevel = getMaturityLevel(scores.global)
   const maturityColor = getMaturityColor(maturityLevel)
   const nextLevel = getNextMaturityLevel(scores.global)
-  const reportDate = new Date().toLocaleDateString(lang === 'ar' ? 'ar-SA' : lang === 'ru' ? 'ru-RU' : lang === 'fr' ? 'fr-FR' : lang === 'es' ? 'es-ES' : 'en-GB', { year: 'numeric', month: 'long', day: 'numeric' })
+  const reportDate = new Date().toLocaleDateString(
+    lang === 'ar' ? 'ar-SA' : lang === 'ru' ? 'ru-RU' : lang === 'fr' ? 'fr-FR' : lang === 'es' ? 'es-ES' : 'en-GB',
+    { year: 'numeric', month: 'long', day: 'numeric' }
+  )
 
   const radarData = Object.entries(scores.byPhase).map(([slug, score]) => ({
     subject: phaseNames[slug] ?? slug,
@@ -325,10 +418,13 @@ export default function Results() {
 
   const nextLevelActions = actionPlan.filter(a => a.section === 'next_level')
   const qualityTotalActions = actionPlan.filter(a => a.section === 'quality_total')
-  // Fallback: if section is not set, show all in next_level
   const allActionsAreUnsectioned = actionPlan.every(a => !a.section)
   const displayNextLevel = allActionsAreUnsectioned ? actionPlan : nextLevelActions
   const displayQualityTotal = allActionsAreUnsectioned ? [] : qualityTotalActions
+
+  // Organization name: prefer organization field, fallback to name
+  const orgName = session?.organization || session?.name || 'Your Organization'
+  const respondentName = session?.organization ? session?.name : null
 
   return (
     <div className="min-h-screen flex flex-col bg-gray-50">
@@ -356,10 +452,10 @@ export default function Results() {
             <div className="flex-1 text-center md:text-left">
               <p className="section-label mb-2">{t('results.title')}</p>
               <h1 className="text-2xl md:text-3xl font-bold text-white mb-1" style={{ letterSpacing: '-0.02em' }}>
-                {session?.organization ?? session?.name ?? 'Your Organization'}
+                {orgName}
               </h1>
-              {session?.name && (
-                <p className="text-white/60 text-sm mb-1">{session.name}</p>
+              {respondentName && (
+                <p className="text-white/60 text-sm mb-1">{respondentName}</p>
               )}
               <p className="text-white/50 text-sm mb-3">
                 {session?.country && `${session.country} · `}
@@ -415,6 +511,9 @@ export default function Results() {
       </section>
 
       <main className="flex-1 max-w-5xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-8 space-y-8">
+
+        {/* Maturity Timeline */}
+        <MaturityTimeline currentLevel={maturityLevel} t={t} />
 
         {/* Charts */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -475,7 +574,7 @@ export default function Results() {
             {Object.entries(scores.byPhase).map(([slug, score]) => {
               const level = getMaturityLevel(score)
               const phaseDesc = PHASE_DESCRIPTIONS[slug]
-              const descText = phaseDesc ? (lang === 'es' ? phaseDesc.es : lang === 'fr' ? phaseDesc.en : lang === 'ar' ? phaseDesc.en : lang === 'ru' ? phaseDesc.en : phaseDesc.en) : ''
+              const descText = phaseDesc ? (lang === 'es' ? phaseDesc.es : phaseDesc.en) : ''
               return (
                 <div key={slug} className="card p-5">
                   <div className="flex items-center justify-between mb-2">
@@ -520,7 +619,6 @@ export default function Results() {
               {displayNextLevel.map((action, i) => {
                 const title = lang === 'es' ? action.titleEs : action.titleEn
                 const rawDesc = lang === 'es' ? (action.descriptionEs ?? action.descriptionEn ?? '') : (action.descriptionEn ?? '')
-                // Parse WHY and REQUIRES from description
                 const whyMatch = rawDesc.match(/(?:WHY|POR QUÉ):\s*(.+?)(?:\s*\||\s*REQUIRES:|$)/i)
                 const reqMatch = rawDesc.match(/(?:REQUIRES|REQUIERE):\s*(.+?)$/i)
                 const why = whyMatch ? whyMatch[1].trim() : rawDesc
@@ -537,7 +635,7 @@ export default function Results() {
                       <div className="flex flex-wrap items-center gap-2 mb-1">
                         <h3 className="font-semibold text-sm" style={{ color: 'var(--brand-navy)' }}>{title}</h3>
                         <PriorityBadge priority={action.priority} />
-                        <HorizonBadge horizon={action.horizon} t={t} />
+                        <HorizonBadge horizon={action.horizon} />
                       </div>
                       <p className="text-xs text-gray-400 mb-2">
                         {t('results.phase')}: {phaseNames[action.phaseSlug] ?? action.phaseSlug}
@@ -575,7 +673,7 @@ export default function Results() {
           <div>
             <div className="flex items-center gap-3 mb-5">
               <div className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0" style={{ background: 'var(--brand-cyan)' }}>
-                <Map size={16} className="text-white" />
+                <ArrowRight size={16} className="text-white" />
               </div>
               <div>
                 <h2 className="section-heading text-base font-bold" style={{ color: 'var(--brand-navy)' }}>
@@ -603,7 +701,7 @@ export default function Results() {
                     <div className="flex-1 min-w-0">
                       <div className="flex flex-wrap items-center gap-2 mb-1">
                         <h3 className="font-semibold text-sm" style={{ color: 'var(--brand-navy)' }}>{title}</h3>
-                        <span className="text-xs px-2 py-0.5 rounded bg-gray-100 text-gray-500 font-medium">Long-term</span>
+                        <HorizonBadge horizon={action.horizon} />
                       </div>
                       <p className="text-xs text-gray-400 mb-2">
                         {t('results.phase')}: {phaseNames[action.phaseSlug] ?? action.phaseSlug}
@@ -630,18 +728,13 @@ export default function Results() {
 
         {/* Analysis */}
         <div>
-          <div className="flex items-center justify-between mb-5">
+          <div className="flex items-center gap-3 mb-5">
+            <div className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0" style={{ background: 'var(--brand-navy)' }}>
+              <Zap size={16} className="text-white" />
+            </div>
             <h2 className="section-heading text-base font-bold" style={{ color: 'var(--brand-navy)' }}>
               Analysis
             </h2>
-            <button
-              onClick={() => navigate('/assessment', { state: { token, editMode: true } })}
-              className="flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-sm border-2 transition-all hover:bg-gray-50 print:hidden"
-              style={{ borderColor: 'var(--brand-navy)', color: 'var(--brand-navy)' }}
-            >
-              <Edit3 size={14} />
-              Review & Edit Answers
-            </button>
           </div>
 
           {analysisError && (
@@ -663,6 +756,33 @@ export default function Results() {
           {llmAnalysis && (
             <LLMSection analysis={llmAnalysis} t={t} lang={lang} />
           )}
+        </div>
+
+        {/* Review & Edit Answers — final section */}
+        <div className="card p-6 border-2 print:hidden" style={{ borderColor: '#E5E7EB' }}>
+          <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+            <div className="flex items-start gap-4">
+              <div className="w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0" style={{ background: 'var(--brand-light)' }}>
+                <Edit3 size={18} style={{ color: 'var(--brand-navy)' }} />
+              </div>
+              <div>
+                <h3 className="font-bold text-sm mb-1" style={{ color: 'var(--brand-navy)' }}>
+                  {t('results.review.title')}
+                </h3>
+                <p className="text-xs text-gray-500 leading-relaxed max-w-lg">
+                  {t('results.review.desc')}
+                </p>
+              </div>
+            </div>
+            <button
+              onClick={() => navigate('/assessment', { state: { token, editMode: true } })}
+              className="flex items-center gap-2 px-5 py-2.5 text-sm font-semibold rounded border-2 transition-all hover:bg-gray-50 flex-shrink-0"
+              style={{ borderColor: 'var(--brand-navy)', color: 'var(--brand-navy)' }}
+            >
+              <Edit3 size={14} />
+              {t('results.review.btn')}
+            </button>
+          </div>
         </div>
 
       </main>

@@ -11,12 +11,12 @@ export default function Footer() {
         <div className="divider-cyan mb-8 opacity-40" />
 
         <div className="flex flex-col md:flex-row items-center justify-between gap-6">
-          {/* Logo ONE */}
+          {/* Logo ONE — 3x larger */}
           <img
             src="/one-logo-white.png"
             alt="ONE for Regulators"
-            className="h-9 w-auto object-contain"
-            style={{ maxWidth: '140px' }}
+            className="h-28 w-auto object-contain"
+            style={{ maxWidth: '420px' }}
           />
 
           {/* Links */}
