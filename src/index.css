@@ -179,7 +179,7 @@
   .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
 }
 
-/* ── Print / PDF styles ── */
+/* ── Print / PDF styles v2 ── */
 @media print {
   /* Hide non-report elements */
   nav, footer, .print\:hidden, .no-print { display: none !important; }
