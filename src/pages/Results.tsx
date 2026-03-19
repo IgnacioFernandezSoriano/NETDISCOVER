@@ -5,7 +5,7 @@ import {
   RadarChart, PolarGrid, PolarAngleAxis, Radar, ResponsiveContainer,
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Cell
 } from 'recharts'
-import { Download, Loader2, AlertCircle, ChevronDown, ChevronUp, Zap, TrendingUp, ArrowRight, Clock, Target, Map } from 'lucide-react'
+import { Download, Loader2, AlertCircle, ChevronDown, ChevronUp, Zap, TrendingUp, ArrowRight, Clock, Target, Map, Edit3 } from 'lucide-react'
 import Navbar from '../components/Navbar'
 import Footer from '../components/Footer'
 import { supabase } from '../lib/supabase'
@@ -185,6 +185,8 @@ export default function Results() {
   const [loadingAnalysis, setLoadingAnalysis] = useState(false)
   const [analysisError, setAnalysisError] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
+  const [analysisTriggered, setAnalysisTriggered] = useState(false)
+  const forceRegenerate = location.state?.forceRegenerate === true
 
   const token = location.state?.token ?? searchParams.get('token') ?? localStorage.getItem('nd_token')
 
@@ -222,6 +224,16 @@ export default function Results() {
     }
     loadSession()
   }, [token, session])
+
+  // Auto-generate analysis once session and scores are ready
+  // If forceRegenerate (came from edit mode), clear existing analysis and regenerate
+  useEffect(() => {
+    if (analysisTriggered || loadingAnalysis || !scores || !session) return
+    if (llmAnalysis && !forceRegenerate) return
+    setAnalysisTriggered(true)
+    if (forceRegenerate) setLlmAnalysis(null)
+    handleGenerateAnalysis()
+  }, [scores, session, llmAnalysis, loadingAnalysis, analysisTriggered, forceRegenerate])
 
   const handleGenerateAnalysis = async () => {
     if (!scores || !session) return
@@ -616,23 +628,20 @@ export default function Results() {
           </div>
         )}
 
-        {/* AI Analysis */}
+        {/* Analysis */}
         <div>
           <div className="flex items-center justify-between mb-5">
             <h2 className="section-heading text-base font-bold" style={{ color: 'var(--brand-navy)' }}>
-              {t('results.ai.title')}
+              Analysis
             </h2>
-            {!llmAnalysis && (
-              <button
-                onClick={handleGenerateAnalysis}
-                disabled={loadingAnalysis}
-                className="flex items-center gap-2 px-4 py-2 text-sm font-semibold text-white rounded-sm disabled:opacity-50 print:hidden"
-                style={{ background: 'var(--brand-cyan)' }}
-              >
-                {loadingAnalysis ? <Loader2 size={14} className="animate-spin" /> : <Zap size={14} />}
-                {loadingAnalysis ? t('results.ai.generating') : t('results.ai.generate')}
-              </button>
-            )}
+            <button
+              onClick={() => navigate('/assessment', { state: { token, editMode: true } })}
+              className="flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-sm border-2 transition-all hover:bg-gray-50 print:hidden"
+              style={{ borderColor: 'var(--brand-navy)', color: 'var(--brand-navy)' }}
+            >
+              <Edit3 size={14} />
+              Review & Edit Answers
+            </button>
           </div>
 
           {analysisError && (
@@ -644,18 +653,15 @@ export default function Results() {
             </div>
           )}
 
-          {llmAnalysis ? (
-            <LLMSection analysis={llmAnalysis} t={t} lang={lang} />
-          ) : (
-            <div className="card p-8 text-center border-dashed">
-              <Zap size={24} className="mx-auto mb-3" style={{ color: 'var(--brand-cyan)' }} />
-              <p className="text-sm text-gray-500 mb-1">
-                {t('results.ai.placeholder')}
-              </p>
-              <p className="text-xs text-gray-400">
-                {t('results.ai.placeholder.sub')}
-              </p>
+          {loadingAnalysis && !llmAnalysis && (
+            <div className="card p-8 text-center">
+              <Loader2 size={24} className="mx-auto mb-3 animate-spin" style={{ color: 'var(--brand-cyan)' }} />
+              <p className="text-sm text-gray-500">{t('results.ai.generating')}</p>
             </div>
+          )}
+
+          {llmAnalysis && (
+            <LLMSection analysis={llmAnalysis} t={t} lang={lang} />
           )}
         </div>
 

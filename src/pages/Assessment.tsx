@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { useNavigate, useSearchParams } from 'react-router-dom'
+import { useNavigate, useSearchParams, useLocation } from 'react-router-dom'
 import { ChevronLeft, ChevronRight, CheckCircle, Info, Loader2, AlertCircle, Save, Mail, BookmarkCheck } from 'lucide-react'
 import Navbar from '../components/Navbar'
 import { useAssessment } from '../hooks/useAssessment'
@@ -469,6 +469,7 @@ interface ProfileForm {
 
 export default function Assessment() {
   const navigate = useNavigate()
+  const location = useLocation()
   const [searchParams] = useSearchParams()
   const { t, lang } = useI18n()
   const {
@@ -491,13 +492,17 @@ export default function Assessment() {
   const [restoreError, setRestoreError] = useState('')
   const [restoreMode, setRestoreMode] = useState<'token' | 'email'>('token')
 
-  // Restore from URL token
+  // editMode: came from Results page to review/edit answers
+  const editMode = location.state?.editMode === true
+  const editToken = location.state?.token as string | undefined
+
+  // Restore from URL token or editMode token
   useEffect(() => {
-    const urlToken = searchParams.get('token')
+    const urlToken = searchParams.get('token') ?? editToken
     if (urlToken) {
       restoreFromToken(urlToken)
     }
-  }, [searchParams, restoreFromToken])
+  }, [searchParams, restoreFromToken, editToken])
 
   const currentPhase = phases[currentPhaseIndex]
   const currentQuestions = currentPhase ? questionsForPhase(currentPhase.id).filter(q => q.question_type !== 'hidden') : []
@@ -538,7 +543,8 @@ export default function Assessment() {
         entityType: profile.entityType,
         email: profile.email || undefined,
       })
-      navigate('/results', { state: { scores, gaps, actionPlan, token } })
+      // In editMode, navigate back to results with forceRegenerate flag
+      navigate('/results', { state: { scores, gaps, actionPlan, token, forceRegenerate: editMode } })
     } catch (e) {
       console.error(e)
     } finally {
