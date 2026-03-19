@@ -776,7 +776,7 @@ Return ONLY valid JSON, no markdown, no extra text.`
         </div>
 
         {/* Contact Section */}
-        <div className="rounded-2xl overflow-hidden no-print" style={{ border: '1px solid #E5E7EB' }}>
+        <div className="rounded-2xl overflow-hidden no-print contact-section" style={{ border: '1px solid #E5E7EB' }}>
           {/* Header */}
           <div
             className="px-8 py-10 text-center"

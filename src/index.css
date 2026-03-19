@@ -183,6 +183,7 @@
 @media print {
   /* Hide non-report elements */
   nav, footer, .print\:hidden, .no-print { display: none !important; }
+  .contact-section { display: none !important; }
 
   body { background: white !important; color: #1A202C !important; }
 
