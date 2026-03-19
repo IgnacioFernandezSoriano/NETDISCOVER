@@ -500,7 +500,7 @@ export default function Assessment() {
   }, [searchParams, restoreFromToken])
 
   const currentPhase = phases[currentPhaseIndex]
-  const currentQuestions = currentPhase ? questionsForPhase(currentPhase.id) : []
+  const currentQuestions = currentPhase ? questionsForPhase(currentPhase.id).filter(q => q.question_type !== 'hidden') : []
   const isLastPhase = currentPhaseIndex === phases.length - 1
 
   const handleAnswer = async (questionId: number, value: number | string[]) => {
@@ -602,8 +602,8 @@ export default function Assessment() {
 
   if (!currentPhase) return null
 
-  const totalScoredQuestions = questions.filter(q => q.question_type !== 'barrier' && phases.find(p => p.id === q.phase_id && !p.scoring_excluded)).length
-  const answeredScored = questions.filter(q => q.question_type !== 'barrier' && answers[String(q.id)] !== undefined && phases.find(p => p.id === q.phase_id && !p.scoring_excluded)).length
+  const totalScoredQuestions = questions.filter(q => q.question_type !== 'barrier' && q.question_type !== 'hidden' && phases.find(p => p.id === q.phase_id && !p.scoring_excluded)).length
+  const answeredScored = questions.filter(q => q.question_type !== 'barrier' && q.question_type !== 'hidden' && answers[String(q.id)] !== undefined && phases.find(p => p.id === q.phase_id && !p.scoring_excluded)).length
   const overallProgress = totalScoredQuestions > 0 ? Math.round((answeredScored / totalScoredQuestions) * 100) : 0
 
   const phaseTitle = getLocalizedText(currentPhase as unknown as Record<string, unknown>, 'title', lang as 'en' | 'es' | 'fr') || currentPhase.title_en

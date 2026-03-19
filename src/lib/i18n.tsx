@@ -87,7 +87,7 @@ const translations: Record<Lang, Record<string, string>> = {
     // Profile modal
     'profile.title': 'Complete Your Profile',
     'profile.sub': 'This information personalizes your analysis report.',
-    'profile.name': 'Full Name',
+    'profile.name': 'First and Last Name',
     'profile.org': 'Organization',
     'profile.country': 'Country',
     'profile.type': 'Entity Type',
@@ -187,7 +187,7 @@ const translations: Record<Lang, Record<string, string>> = {
 
     'profile.title': 'Complete su Perfil',
     'profile.sub': 'Esta información personaliza su informe de análisis.',
-    'profile.name': 'Nombre Completo',
+    'profile.name': 'Nombre y Apellidos',
     'profile.org': 'Organización',
     'profile.country': 'País',
     'profile.type': 'Tipo de Entidad',
@@ -281,7 +281,7 @@ const translations: Record<Lang, Record<string, string>> = {
 
     'profile.title': 'Complétez Votre Profil',
     'profile.sub': 'Ces informations personnalisent votre rapport d\'analyse.',
-    'profile.name': 'Nom Complet',
+    'profile.name': 'Prénom et Nom',
     'profile.org': 'Organisation',
     'profile.country': 'Pays',
     'profile.type': 'Type d\'Entité',
@@ -375,7 +375,7 @@ const translations: Record<Lang, Record<string, string>> = {
 
     'profile.title': 'أكمل ملفك الشخصي',
     'profile.sub': 'تُخصص هذه المعلومات تقرير التحليل الخاص بك.',
-    'profile.name': 'الاسم الكامل',
+    'profile.name': 'الاسم والكنية',
     'profile.org': 'المنظمة',
     'profile.country': 'الدولة',
     'profile.type': 'نوع الجهة',
@@ -469,7 +469,7 @@ const translations: Record<Lang, Record<string, string>> = {
 
     'profile.title': 'Заполните свой профиль',
     'profile.sub': 'Эта информация персонализирует ваш аналитический отчёт.',
-    'profile.name': 'Полное имя',
+    'profile.name': 'Имя и фамилия',
     'profile.org': 'Организация',
     'profile.country': 'Страна',
     'profile.type': 'Тип организации',

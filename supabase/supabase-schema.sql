@@ -178,7 +178,7 @@ INSERT INTO questions (phase_id, order_index, slug, text_es, text_en, text_fr, h
  '1=No existe separación / 2=Separación nominal pero sin independencia real / 3=Independencia formal pero con influencia del operador / 4=Independencia total con mandato legal claro',
  '1=No separation exists / 2=Nominal separation but no real independence / 3=Formal independence but with operator influence / 4=Full independence with clear legal mandate',
  '1=Pas de séparation / 2=Séparation nominale sans indépendance réelle / 3=Indépendance formelle avec influence de l''opérateur / 4=Indépendance totale avec mandat légal clair',
- 'scale', 0.00),
+ 'hidden', 0.00),
 ((SELECT id FROM phases WHERE slug='phase0'), 2, 'p0q2',
  '¿Cuál es la prioridad estratégica de la medición de calidad postal en la agenda del regulador?',
  'What is the strategic priority of postal quality measurement on the regulator''s agenda?',
@@ -210,17 +210,15 @@ INSERT INTO questions (phase_id, order_index, slug, text_es, text_en, text_fr, h
  'Seleccione el obstáculo más relevante.',
  'Select the most relevant obstacle.',
  'Sélectionnez l''obstacle le plus pertinent.',
- 'barrier', 0.00);
+ 'multiple_choice', 0.00);
 
 -- Set options for p0q5
 UPDATE questions SET options = '[
   {"value":"no_budget","labelEs":"Falta de presupuesto","labelEn":"Lack of budget","labelFr":"Manque de budget"},
   {"value":"no_legal","labelEs":"Marco legal insuficiente","labelEn":"Insufficient legal framework","labelFr":"Cadre juridique insuffisant"},
-  {"value":"operator_resistance","labelEs":"Resistencia del operador","labelEn":"Operator resistance","labelFr":"Résistance de l''opérateur"},
   {"value":"no_expertise","labelEs":"Falta de experiencia técnica","labelEn":"Lack of technical expertise","labelFr":"Manque d''expertise technique"},
-  {"value":"no_priority","labelEs":"No es prioridad institucional","labelEn":"Not an institutional priority","labelFr":"Pas une priorité institutionnelle"},
   {"value":"no_obstacle","labelEs":"No hay obstáculos significativos","labelEn":"No significant obstacles","labelFr":"Pas d''obstacles significatifs"}
-]'::jsonb WHERE slug = 'p0q5';
+]''::jsonb WHERE slug = ''p0q5'';
 
 -- Phase 1: Measurement System Design
 INSERT INTO questions (phase_id, order_index, slug, text_es, text_en, text_fr, help_es, help_en, help_fr, question_type, weight) VALUES
@@ -263,14 +261,13 @@ INSERT INTO questions (phase_id, order_index, slug, text_es, text_en, text_fr, h
  'Seleccione el obstáculo más relevante.',
  'Select the most relevant obstacle.',
  'Sélectionnez l''obstacle le plus pertinent.',
- 'barrier', 0.00);
+ 'multiple_choice', 0.00);
 
 UPDATE questions SET options = '[
   {"value":"no_budget","labelEs":"Falta de presupuesto para contratar panelistas","labelEn":"No budget to hire panelists","labelFr":"Pas de budget pour recruter des panélistes"},
   {"value":"no_methodology","labelEs":"Falta de conocimiento de la metodología UPU","labelEn":"Lack of knowledge of UPU methodology","labelFr":"Manque de connaissance de la méthodologie UPU"},
   {"value":"no_technology","labelEs":"No se dispone de plataforma tecnológica","labelEn":"No technology platform available","labelFr":"Pas de plateforme technologique disponible"},
   {"value":"no_staff","labelEs":"Falta de personal técnico especializado","labelEn":"Lack of specialized technical staff","labelFr":"Manque de personnel technique spécialisé"},
-  {"value":"operator_no_cooperate","labelEs":"El operador no coopera con la medición","labelEn":"Operator does not cooperate with measurement","labelFr":"L''opérateur ne coopère pas avec la mesure"},
   {"value":"already_designed","labelEs":"El sistema ya está diseñado","labelEn":"The system is already designed","labelFr":"Le système est déjà conçu"}
 ]'::jsonb WHERE slug = 'p1q5';
 
@@ -315,10 +312,9 @@ INSERT INTO questions (phase_id, order_index, slug, text_es, text_en, text_fr, h
  'Seleccione el obstáculo más relevante.',
  'Select the most relevant obstacle.',
  'Sélectionnez l''obstacle le plus pertinent.',
- 'barrier', 0.00);
+ 'multiple_choice', 0.00);
 
 UPDATE questions SET options = '[
-  {"value":"operator_no_share","labelEs":"El operador no comparte información sobre su red","labelEn":"Operator does not share network information","labelFr":"L''opérateur ne partage pas les informations sur son réseau"},
   {"value":"no_resources","labelEs":"No hay recursos para realizar el levantamiento","labelEn":"No resources to conduct the survey","labelFr":"Pas de ressources pour réaliser le relevé"},
   {"value":"network_changes","labelEs":"La red cambia frecuentemente y es difícil mantenerla actualizada","labelEn":"The network changes frequently and is difficult to keep updated","labelFr":"Le réseau change fréquemment et est difficile à maintenir à jour"},
   {"value":"no_gis","labelEs":"No se dispone de herramientas GIS o de mapeo","labelEn":"No GIS or mapping tools available","labelFr":"Pas d''outils SIG ou de cartographie disponibles"},
@@ -367,11 +363,9 @@ INSERT INTO questions (phase_id, order_index, slug, text_es, text_en, text_fr, h
  'Seleccione el obstáculo más relevante.',
  'Select the most relevant obstacle.',
  'Sélectionnez l''obstacle le plus pertinent.',
- 'barrier', 0.00);
+ 'multiple_choice', 0.00);
 
 UPDATE questions SET options = '[
-  {"value":"no_political_will","labelEs":"Falta de voluntad política para imponer SLAs vinculantes","labelEn":"Lack of political will to impose binding SLAs","labelFr":"Manque de volonté politique pour imposer des SLA contraignants"},
-  {"value":"operator_resistance","labelEs":"El operador se resiste a aceptar SLAs con consecuencias","labelEn":"Operator resists accepting SLAs with consequences","labelFr":"L''opérateur résiste à l''acceptation de SLA avec conséquences"},
   {"value":"no_legal_framework","labelEs":"No existe marco legal para formalizar los SLAs","labelEn":"No legal framework to formalize SLAs","labelFr":"Pas de cadre juridique pour formaliser les SLA"},
   {"value":"no_experience","labelEs":"Falta experiencia en diseño de SLAs postales","labelEn":"Lack of experience in postal SLA design","labelFr":"Manque d''expérience dans la conception de SLA postaux"},
   {"value":"already_established","labelEs":"Los SLAs ya están establecidos y funcionan","labelEn":"SLAs are already established and working","labelFr":"Les SLA sont déjà établis et fonctionnent"}
@@ -418,11 +412,10 @@ INSERT INTO questions (phase_id, order_index, slug, text_es, text_en, text_fr, h
  'Seleccione el obstáculo más relevante.',
  'Select the most relevant obstacle.',
  'Sélectionnez l''obstacle le plus pertinent.',
- 'barrier', 0.00);
+ 'multiple_choice', 0.00);
 
 UPDATE questions SET options = '[
   {"value":"no_budget_rfid","labelEs":"No hay presupuesto para equipamiento RFID","labelEn":"No budget for RFID equipment","labelFr":"Pas de budget pour les équipements RFID"},
-  {"value":"operator_no_install","labelEs":"El operador no permite instalar equipamiento en sus instalaciones","labelEn":"Operator does not allow equipment installation in its facilities","labelFr":"L''opérateur ne permet pas l''installation d''équipements dans ses installations"},
   {"value":"no_infrastructure","labelEs":"Las instalaciones no tienen la infraestructura necesaria","labelEn":"Facilities lack the necessary infrastructure","labelFr":"Les installations manquent de l''infrastructure nécessaire"},
   {"value":"no_technical_staff","labelEs":"No hay personal técnico para instalar y mantener los equipos","labelEn":"No technical staff to install and maintain equipment","labelFr":"Pas de personnel technique pour installer et maintenir les équipements"},
   {"value":"no_rfid_supplier","labelEs":"No se dispone de proveedor de equipamiento RFID","labelEn":"No RFID equipment supplier available","labelFr":"Pas de fournisseur d''équipements RFID disponible"},
@@ -470,7 +463,7 @@ INSERT INTO questions (phase_id, order_index, slug, text_es, text_en, text_fr, h
  'Seleccione el obstáculo más relevante.',
  'Select the most relevant obstacle.',
  'Sélectionnez l''obstacle le plus pertinent.',
- 'barrier', 0.00);
+ 'multiple_choice', 0.00);
 
 UPDATE questions SET options = '[
   {"value":"no_budget_operations","labelEs":"No hay presupuesto para operación continua","labelEn":"No budget for continuous operation","labelFr":"Pas de budget pour le fonctionnement continu"},
@@ -506,7 +499,7 @@ INSERT INTO questions (phase_id, order_index, slug, text_es, text_en, text_fr, h
  '1=Solo puede recomendar sin consecuencias / 2=Puede emitir recomendaciones formales pero sin poder sancionador / 3=Tiene poder sancionador pero no lo ha ejercido nunca o rara vez / 4=Régimen sancionador activo, vinculado a SLAs, con procedimiento establecido y sanciones aplicadas',
  '1=Can only recommend without consequences / 2=Can issue formal recommendations but without sanctioning power / 3=Has sanctioning power but has never or rarely exercised it / 4=Active sanctioning regime, linked to SLAs, with established procedure and applied sanctions',
  '1=Peut seulement recommander sans conséquences / 2=Peut émettre des recommandations formelles sans pouvoir de sanction / 3=A un pouvoir de sanction mais ne l''a jamais ou rarement exercé / 4=Régime de sanction actif, lié aux SLA, avec procédure établie et sanctions appliquées',
- 'scale', 1.50),
+ 'hidden', 0.00),
 ((SELECT id FROM phases WHERE slug='phase6'), 4, 'p6q4',
  '¿Se verifica con datos de medición si las acciones de mejora implementadas producen el efecto esperado?',
  'Is measurement data used to verify whether implemented improvement actions produce the expected effect?',
@@ -522,16 +515,13 @@ INSERT INTO questions (phase_id, order_index, slug, text_es, text_en, text_fr, h
  'Seleccione el obstáculo más relevante.',
  'Select the most relevant obstacle.',
  'Sélectionnez l''obstacle le plus pertinent.',
- 'barrier', 0.00);
-
+ 'multiple_choice', 0.00);
 UPDATE questions SET options = '[
   {"value":"no_data","labelEs":"No hay datos suficientes para diagnosticar las causas","labelEn":"Insufficient data to diagnose causes","labelFr":"Données insuffisantes pour diagnostiquer les causes"},
-  {"value":"operator_no_cooperate","labelEs":"El operador no colabora en los planes de mejora","labelEn":"Operator does not cooperate in improvement plans","labelFr":"L''opérateur ne coopère pas aux plans d''amélioration"},
   {"value":"no_consultants","labelEs":"Falta de consultores con experiencia en operaciones postales","labelEn":"Lack of consultants with postal operations experience","labelFr":"Manque de consultants avec expérience en opérations postales"},
-  {"value":"no_regulatory_capacity","labelEs":"No hay capacidad regulatoria para imponer acciones correctivas","labelEn":"No regulatory capacity to impose corrective actions","labelFr":"Pas de capacité réglementaire pour imposer des actions correctives"},
   {"value":"staff_turnover","labelEs":"Falta de seguimiento por rotación de personal o cambio de prioridades","labelEn":"Lack of follow-up due to staff turnover or priority changes","labelFr":"Manque de suivi dû à la rotation du personnel ou aux changements de priorités"},
   {"value":"already_working","labelEs":"Los planes de mejora ya funcionan","labelEn":"Improvement plans are already working","labelFr":"Les plans d''amélioration fonctionnent déjà"}
-]'::jsonb WHERE slug = 'p6q5';
+]'::jsonb WHERE slug = 'p6q5';;
 
 -- Phase 7: Maturity & Continuous Improvement
 INSERT INTO questions (phase_id, order_index, slug, text_es, text_en, text_fr, help_es, help_en, help_fr, question_type, weight) VALUES
@@ -574,16 +564,14 @@ INSERT INTO questions (phase_id, order_index, slug, text_es, text_en, text_fr, h
  'Seleccione el obstáculo más relevante.',
  'Select the most relevant obstacle.',
  'Sélectionnez l''obstacle le plus pertinent.',
- 'barrier', 0.00);
-
+ 'multiple_choice', 0.00);
 UPDATE questions SET options = '[
-  {"value":"slas_not_questioned","labelEs":"Los SLAs actuales no se cuestionan","labelEn":"Current SLAs are not questioned","labelFr":"Les SLA actuels ne sont pas remis en question"},
   {"value":"no_demand_new_services","labelEs":"No hay demanda para medir nuevos servicios","labelEn":"No demand to measure new services","labelFr":"Pas de demande pour mesurer de nouveaux services"},
   {"value":"no_resources_international","labelEs":"Falta de recursos para participar en programas internacionales","labelEn":"Lack of resources to participate in international programmes","labelFr":"Manque de ressources pour participer aux programmes internationaux"},
   {"value":"incompatible_methodology","labelEs":"La metodología no es compatible con estándares internacionales","labelEn":"Methodology not compatible with international standards","labelFr":"Méthodologie non compatible avec les normes internationales"},
   {"value":"no_peer_network","labelEs":"Falta de interlocución con otros reguladores","labelEn":"Lack of dialogue with other regulators","labelFr":"Manque de dialogue avec d''autres régulateurs"},
   {"value":"already_mature","labelEs":"El sistema ya está en fase de madurez","labelEn":"The system is already in a maturity phase","labelFr":"Le système est déjà en phase de maturité"}
-]'::jsonb WHERE slug = 'p7q5';
+]'::jsonb WHERE slug = 'p7q5';;
 
 -- ── 5. SEED: MARKET PROVIDERS ────────────────────────────────
 

@@ -47,7 +47,7 @@ export interface Question {
   help_es: string | null
   help_en: string | null
   context_es: string | null
-  question_type: 'scale' | 'yes_no' | 'multiple_choice' | 'single_choice' | 'barrier'
+  question_type: 'scale' | 'yes_no' | 'multiple_choice' | 'single_choice' | 'barrier' | 'hidden'
   weight: number
   options: BarrierOption[] | null
   options_json: OptionItem[] | null
