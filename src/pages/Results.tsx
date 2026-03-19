@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useLocation, useNavigate, useSearchParams } from 'react-router-dom'
+import { useI18n } from '../lib/i18n'
 import {
   RadarChart, PolarGrid, PolarAngleAxis, Radar, ResponsiveContainer,
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Cell
@@ -176,6 +177,14 @@ export default function Results() {
   const location = useLocation()
   const navigate = useNavigate()
   const [searchParams] = useSearchParams()
+  const { t, lang } = useI18n()
+
+  const PHASE_NAMES_I18N: Record<string, Record<string, string>> = {
+    en: { phase0: 'Context', phase1: 'Measurement', phase2: 'Ecosystem', phase3: 'SLAs', phase4: 'Network', phase5: 'Improvement', phase6: 'Enforcement', phase7: 'Maturity' },
+    es: { phase0: 'Contexto', phase1: 'Medición', phase2: 'Ecosistema', phase3: 'SLAs', phase4: 'Red', phase5: 'Mejora', phase6: 'Cumplimiento', phase7: 'Madurez' },
+    fr: { phase0: 'Contexte', phase1: 'Mesure', phase2: 'Écosystème', phase3: 'SLAs', phase4: 'Réseau', phase5: 'Amélioration', phase6: 'Application', phase7: 'Maturité' },
+  }
+  const phaseNames = PHASE_NAMES_I18N[lang] ?? PHASE_NAMES_I18N.en
 
   const [session, setSession] = useState<GuestSession | null>(null)
   const [scores, setScores] = useState<ScoreResult | null>(location.state?.scores ?? null)
@@ -280,13 +289,13 @@ export default function Results() {
   const maturityColor = getMaturityColor(maturityLevel)
 
   const radarData = Object.entries(scores.byPhase).map(([slug, score]) => ({
-    subject: PHASE_NAMES[slug] ?? slug,
+    subject: phaseNames[slug] ?? slug,
     score,
     fullMark: 100,
   }))
 
   const barData = Object.entries(scores.byPhase).map(([slug, score]) => ({
-    phase: PHASE_NAMES[slug] ?? slug,
+    phase: phaseNames[slug] ?? slug,
     slug,
     score,
   }))
@@ -315,7 +324,7 @@ export default function Results() {
 
             {/* Info */}
             <div className="flex-1 text-center md:text-left">
-              <p className="section-label mb-2">Assessment Results</p>
+              <p className="section-label mb-2">{t('results.title')}</p>
               <h1 className="text-2xl md:text-3xl font-bold text-white mb-3" style={{ letterSpacing: '-0.02em' }}>
                 {session?.organization ?? 'Your Organization'}
               </h1>
@@ -334,7 +343,7 @@ export default function Results() {
                       className="text-xs px-2 py-1 rounded"
                       style={{ background: 'rgba(255,255,255,0.1)', color: 'white' }}
                     >
-                      {PHASE_NAMES[g.phaseSlug] ?? g.phaseSlug}: {g.score}%
+                      {phaseNames[g.phaseSlug] ?? g.phaseSlug}: {g.score}%
                     </span>
                   ))}
                 </div>
@@ -347,7 +356,7 @@ export default function Results() {
                 onClick={() => navigate('/benchmark', { state: { userScore: scores.global } })}
                 className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-white/80 hover:text-white border border-white/20 hover:border-white/40 rounded transition-all"
               >
-                Compare with Benchmark
+                {t('results.benchmark')}
                 <ArrowRight size={14} />
               </button>
               <button
@@ -355,7 +364,7 @@ export default function Results() {
                 className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-white rounded transition-all"
                 style={{ background: 'var(--brand-cyan)' }}
               >
-                Find Solutions
+                {t('market.title')}
                 <ArrowRight size={14} />
               </button>
             </div>
@@ -423,7 +432,7 @@ export default function Results() {
               return (
                 <div key={slug} className="card p-4">
                   <div className="flex items-center justify-between mb-2">
-                    <span className="text-xs font-medium text-gray-500">{PHASE_NAMES[slug] ?? slug}</span>
+                    <span className="text-xs font-medium text-gray-500">{phaseNames[slug] ?? slug}</span>
                     <span className="text-lg font-black" style={{ color: PHASE_COLORS[slug] ?? 'var(--brand-navy)' }}>
                       {score}%
                     </span>
@@ -465,7 +474,7 @@ export default function Results() {
                       <HorizonBadge horizon={action.horizon} />
                     </div>
                     <p className="text-xs text-gray-400 mb-2">
-                      {PHASE_NAMES[action.phaseSlug] ?? action.phaseSlug} phase
+                      {phaseNames[action.phaseSlug] ?? action.phaseSlug}
                     </p>
                     {action.descriptionEn && (
                       <p className="text-sm text-gray-600 leading-relaxed">{action.descriptionEn}</p>

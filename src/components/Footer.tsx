@@ -1,26 +1,34 @@
+import { Link } from 'react-router-dom'
+import { useI18n } from '../lib/i18n'
+
 export default function Footer() {
+  const { t } = useI18n()
+
   return (
-    <footer style={{ background: '#0A0F1E' }} className="py-8 mt-auto">
+    <footer style={{ background: '#001440' }} className="py-10 mt-auto">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex flex-col md:flex-row items-center justify-between gap-4">
-          <div className="flex items-center gap-6">
-            <div className="flex items-center gap-2">
-              <div
-                className="w-6 h-6 rounded flex items-center justify-center text-xs font-black text-white"
-                style={{ background: 'var(--brand-cyan)' }}
-              >
-                ND
-              </div>
-              <span className="text-white/40 text-sm font-medium">NetDiscover</span>
-            </div>
-            <div className="w-px h-4 bg-white/10" />
-            <span className="text-white/30 text-xs">ONE for Regulators</span>
-            <div className="w-px h-4 bg-white/10" />
-            <span className="text-white/30 text-xs">Universal Postal Union</span>
+        {/* Top divider */}
+        <div className="divider-cyan mb-8 opacity-40" />
+
+        <div className="flex flex-col md:flex-row items-center justify-between gap-6">
+          {/* Logo ONE */}
+          <img
+            src="/one-logo-white.png"
+            alt="ONE for Regulators"
+            className="h-9 w-auto object-contain"
+            style={{ maxWidth: '140px' }}
+          />
+
+          {/* Links */}
+          <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-white/30">
+            <span>© {new Date().getFullYear()} {t('footer.rights')}</span>
+            <span className="w-px h-3 bg-white/10" />
+            <span>{t('footer.powered')}</span>
+            <span className="w-px h-3 bg-white/10" />
+            <Link to="/disclaimer" className="hover:text-white/60 transition-colors underline underline-offset-2">Disclaimer</Link>
+            <span className="w-px h-3 bg-white/10" />
+            <Link to="/copyright" className="hover:text-white/60 transition-colors underline underline-offset-2">Copyright</Link>
           </div>
-          <p className="text-xs text-white/20">
-            © {new Date().getFullYear()} ONE for Regulators · UPU Framework · Postal Quality Maturity Assessment
-          </p>
         </div>
       </div>
     </footer>

@@ -13,7 +13,7 @@ export function useAssessment() {
   // Session state
   const [token, setToken] = useState<string | null>(() => localStorage.getItem('nd_token'))
   const [session, setSession] = useState<GuestSession | null>(null)
-  const [answers, setAnswers] = useState<Record<string, number>>({})
+  const [answers, setAnswers] = useState<Record<string, number | string[]>>({})
   const [currentPhaseIndex, setCurrentPhaseIndex] = useState(0)
 
   // Load phases and questions
@@ -72,8 +72,8 @@ export function useAssessment() {
     return newToken
   }, [token])
 
-  // Save answer
-  const saveAnswer = useCallback(async (questionId: number, value: number) => {
+  // Save answer (supports number for scale/barrier and string[] for multiple_choice)
+  const saveAnswer = useCallback(async (questionId: number, value: number | string[]) => {
     const newAnswers = { ...answers, [String(questionId)]: value }
     setAnswers(newAnswers)
 
@@ -148,7 +148,12 @@ export function useAssessment() {
   const phaseCompletionRate = useCallback((phaseId: number): number => {
     const phaseQs = questionsForPhase(phaseId).filter(q => q.question_type !== 'barrier')
     if (phaseQs.length === 0) return 100
-    const answered = phaseQs.filter(q => answers[String(q.id)] !== undefined).length
+    const answered = phaseQs.filter(q => {
+      const ans = answers[String(q.id)]
+      if (ans === undefined) return false
+      if (Array.isArray(ans)) return ans.length > 0
+      return true
+    }).length
     return Math.round((answered / phaseQs.length) * 100)
   }, [questionsForPhase, answers])
 

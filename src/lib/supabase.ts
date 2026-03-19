@@ -25,6 +25,17 @@ export interface Phase {
   scoring_excluded: boolean
 }
 
+export interface OptionItem {
+  value: number | string
+  label_es: string
+  label_en?: string
+  label_fr?: string
+  label_ar?: string
+  label_ru?: string
+  desc_es?: string
+  desc_en?: string
+}
+
 export interface Question {
   id: number
   phase_id: number
@@ -35,9 +46,11 @@ export interface Question {
   text_fr: string | null
   help_es: string | null
   help_en: string | null
-  question_type: 'scale' | 'yes_no' | 'multiple_choice' | 'barrier'
+  context_es: string | null
+  question_type: 'scale' | 'yes_no' | 'multiple_choice' | 'single_choice' | 'barrier'
   weight: number
   options: BarrierOption[] | null
+  options_json: OptionItem[] | null
 }
 
 export interface BarrierOption {
@@ -57,7 +70,7 @@ export interface GuestSession {
   entity_type: 'regulator' | 'designated_operator' | null
   status: 'in_progress' | 'completed'
   current_phase_index: number
-  answers: Record<string, number> | null
+  answers: Record<string, number | string[]> | null
   scores: ScoreResult | null
   gaps: Gap[] | null
   action_plan: ActionItem[] | null

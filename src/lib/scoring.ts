@@ -7,7 +7,7 @@ import type { Question, Phase, ScoreResult, Gap, ActionItem } from './supabase'
  * Phase 0: scoring_excluded = true → not included in global
  */
 export function computeScores(
-  answers: Record<string, number>,
+  answers: Record<string, number | string[]>,
   questions: Question[],
   phases: Phase[]
 ): ScoreResult {
@@ -16,7 +16,8 @@ export function computeScores(
 
   for (const phase of scoredPhases) {
     const phaseQuestions = questions.filter(
-      q => q.phase_id === phase.id && q.question_type !== 'barrier' && q.weight > 0
+      q => q.phase_id === phase.id && q.question_type !== 'barrier'
+        && q.question_type !== 'multiple_choice' && q.weight > 0
     )
     if (phaseQuestions.length === 0) {
       byPhase[phase.slug] = 0
@@ -27,7 +28,10 @@ export function computeScores(
     let totalWeight = 0
 
     for (const q of phaseQuestions) {
-      const val = answers[String(q.id)]
+      const raw = answers[String(q.id)]
+      // Only numeric answers contribute to scoring
+      if (raw === undefined || raw === null || Array.isArray(raw)) continue
+      const val = raw as number
       if (val !== undefined && val !== null) {
         // Scale 1-4 → 0-100
         const normalized = ((val - 1) / 3) * 100
