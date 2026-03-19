@@ -5,7 +5,7 @@ import {
   RadarChart, PolarGrid, PolarAngleAxis, Radar, ResponsiveContainer,
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Cell
 } from 'recharts'
-import { Download, Loader2, AlertCircle, ChevronDown, ChevronUp, Zap, TrendingUp, ArrowRight, Clock, Target, Edit3, CheckCircle2 } from 'lucide-react'
+import { Download, Loader2, AlertCircle, ChevronDown, ChevronUp, Zap, TrendingUp, ArrowRight, Clock, Target, Edit3, CheckCircle2, Mail, Users, Globe, CalendarCheck } from 'lucide-react'
 import Navbar from '../components/Navbar'
 import Footer from '../components/Footer'
 import { supabase } from '../lib/supabase'
@@ -741,6 +741,137 @@ Return ONLY valid JSON, no markdown, no extra text.`
           {llmAnalysis && (
             <LLMSection analysis={llmAnalysis} t={t} lang={lang} />
           )}
+        </div>
+
+        {/* Anonymous Regional Results Banner */}
+        <div
+          className="rounded-2xl p-8 text-white print:hidden"
+          style={{ background: 'linear-gradient(135deg, var(--brand-navy) 0%, #0a4a8c 100%)' }}
+        >
+          <div className="flex flex-col md:flex-row items-start md:items-center gap-6">
+            <div
+              className="flex-shrink-0 w-14 h-14 rounded-2xl flex items-center justify-center"
+              style={{ background: 'rgba(255,255,255,0.15)' }}
+            >
+              <Users size={28} className="text-white" />
+            </div>
+            <div className="flex-1">
+              <div className="flex items-center gap-2 mb-2">
+                <span
+                  className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold"
+                  style={{ background: 'var(--brand-cyan)', color: '#fff' }}
+                >
+                  <Globe size={11} />
+                  {t('results.anon.badge')}
+                </span>
+              </div>
+              <h3 className="text-xl font-black mb-2 leading-snug">
+                {t('results.anon.title')}
+              </h3>
+              <p className="text-sm leading-relaxed" style={{ color: 'rgba(255,255,255,0.82)' }}>
+                {t('results.anon.desc')}
+              </p>
+            </div>
+          </div>
+        </div>
+
+        {/* Contact Section */}
+        <div className="rounded-2xl overflow-hidden print:hidden" style={{ border: '1px solid #E5E7EB' }}>
+          {/* Header */}
+          <div
+            className="px-8 py-10 text-center"
+            style={{ background: '#F8FAFC' }}
+          >
+            <p className="text-xs font-bold uppercase tracking-widest mb-3" style={{ color: 'var(--brand-cyan)' }}>
+              — {t('results.contact.schedule')}
+            </p>
+            <h2 className="text-2xl font-black mb-3" style={{ color: 'var(--brand-navy)' }}>
+              {t('results.contact.title')}
+            </h2>
+            <p className="text-sm text-gray-500 max-w-xl mx-auto leading-relaxed">
+              {t('results.contact.desc')}
+            </p>
+          </div>
+
+          {/* Contact cards */}
+          <div className="grid grid-cols-1 md:grid-cols-2 divide-y md:divide-y-0 md:divide-x divide-gray-200" style={{ borderTop: '1px solid #E5E7EB' }}>
+            {/* Ignacio Fernández */}
+            <div className="p-8 flex flex-col items-center text-center gap-4">
+              <div
+                className="w-20 h-20 rounded-full flex items-center justify-center text-2xl font-black text-white flex-shrink-0"
+                style={{ background: 'var(--brand-navy)' }}
+              >
+                IF
+              </div>
+              <div>
+                <p className="font-bold text-base" style={{ color: 'var(--brand-navy)' }}>Ignacio Fernández</p>
+                <p className="text-xs text-gray-400 mt-0.5">{t('results.contact.role1')}</p>
+              </div>
+              <div className="flex flex-col gap-2 w-full">
+                <a
+                  href="mailto:ignacio.fernandez@upu.int"
+                  className="flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg text-sm font-semibold transition-all hover:opacity-90"
+                  style={{ background: 'var(--brand-navy)', color: '#fff' }}
+                >
+                  <Mail size={14} />
+                  ignacio.fernandez@upu.int
+                </a>
+                <a
+                  href="https://teams.microsoft.com/l/chat/0/0?users=ignacio.fernandez@upu.int"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg text-sm font-semibold border-2 transition-all hover:bg-gray-50"
+                  style={{ borderColor: 'var(--brand-navy)', color: 'var(--brand-navy)' }}
+                >
+                  <CalendarCheck size={14} />
+                  {t('results.contact.teams')}
+                </a>
+              </div>
+            </div>
+
+            {/* Houssem Gharbi */}
+            <div className="p-8 flex flex-col items-center text-center gap-4">
+              <div
+                className="w-20 h-20 rounded-full flex items-center justify-center text-2xl font-black text-white flex-shrink-0"
+                style={{ background: 'var(--brand-cyan)' }}
+              >
+                HG
+              </div>
+              <div>
+                <p className="font-bold text-base" style={{ color: 'var(--brand-navy)' }}>Houssem Gharbi</p>
+                <p className="text-xs text-gray-400 mt-0.5">{t('results.contact.role2')}</p>
+              </div>
+              <div className="flex flex-col gap-2 w-full">
+                <a
+                  href="mailto:gharbiho@upu.int"
+                  className="flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg text-sm font-semibold transition-all hover:opacity-90"
+                  style={{ background: 'var(--brand-cyan)', color: '#fff' }}
+                >
+                  <Mail size={14} />
+                  gharbiho@upu.int
+                </a>
+                <a
+                  href="https://teams.microsoft.com/l/chat/0/0?users=gharbiho@upu.int"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg text-sm font-semibold border-2 transition-all hover:bg-gray-50"
+                  style={{ borderColor: 'var(--brand-cyan)', color: 'var(--brand-cyan)' }}
+                >
+                  <CalendarCheck size={14} />
+                  {t('results.contact.teams')}
+                </a>
+              </div>
+            </div>
+          </div>
+
+          {/* Footer strip */}
+          <div
+            className="px-8 py-4 flex items-center justify-center gap-2 text-xs"
+            style={{ background: '#F8FAFC', borderTop: '1px solid #E5E7EB', color: '#6B7280' }}
+          >
+            <Globe size={12} />
+            UPU · ONE Solutions · Weltpoststrasse 4, 3015 Berne, Switzerland
+          </div>
         </div>
 
         {/* Review & Edit Answers — final section */}

@@ -147,6 +147,20 @@ const translations: Record<Lang, Record<string, string>> = {
     'results.no_results.sub': 'Complete the assessment to view your results.',
     'results.start': 'Start Assessment',
 
+    // Anonymous results section
+    'results.anon.title': 'Your data helps shape the global picture',
+    'results.anon.desc': 'Once we have collected responses from your region, we will share anonymized and aggregated results with all participants. You will be able to compare your maturity level against peer regulators and designated operators — without any individual data being disclosed.',
+    'results.anon.badge': 'Anonymized Regional Report',
+
+    // Contact section
+    'results.contact.title': 'You see the need. Take action.',
+    'results.contact.desc': 'Contact the ONE Solutions team for a country-specific demonstration tailored to your regulatory mandate. The ONE Solutions team is ready to discuss your country\'s specific needs — from initial scoping through to full implementation.',
+    'results.contact.schedule': 'Schedule a Meeting',
+    'results.contact.email': 'Email',
+    'results.contact.teams': 'Call on Microsoft Teams',
+    'results.contact.role1': 'ONE Solutions Manager, Universal Postal Union',
+    'results.contact.role2': 'Technical Account Manager, Universal Postal Union',
+
     // Benchmark
     'benchmark.title': 'Global Benchmark',
     'benchmark.sub': 'Compare your results against anonymized global data',
@@ -284,6 +298,20 @@ const translations: Record<Lang, Record<string, string>> = {
     'results.no_results.sub': 'Complete la evaluación para ver sus resultados.',
     'results.start': 'Iniciar Evaluación',
 
+    // Anonymous results section
+    'results.anon.title': 'Sus datos contribuyen a la imagen global',
+    'results.anon.desc': 'Una vez recogidas las respuestas de su región, compartiremos los resultados anonimizados y agregados con todos los participantes. Podrá comparar su nivel de madurez con el de otros reguladores y operadores designados — sin que se divulgue ningún dato individual.',
+    'results.anon.badge': 'Informe Regional Anonimizado',
+
+    // Contact section
+    'results.contact.title': 'Vea la necesidad. Tome acción.',
+    'results.contact.desc': 'Contacte al equipo de Soluciones ONE para una demostración específica para su país, adaptada a su mandato regulatorio. El equipo de Soluciones ONE está listo para analizar las necesidades específicas de su país, desde el alcance inicial hasta la implementación completa.',
+    'results.contact.schedule': 'Programar una Reunión',
+    'results.contact.email': 'Correo electrónico',
+    'results.contact.teams': 'Llamar por Microsoft Teams',
+    'results.contact.role1': 'Responsable de Soluciones ONE, Unión Postal Universal',
+    'results.contact.role2': 'Gestor de Cuentas Técnicas, Unión Postal Universal',
+
     'benchmark.title': 'Benchmark Global',
     'benchmark.sub': 'Compare sus resultados con datos globales anonimizados',
     'market.title': 'Proveedores de Soluciones',
@@ -415,6 +443,20 @@ const translations: Record<Lang, Record<string, string>> = {
     'results.no_results': 'Aucun résultat trouvé',
     'results.no_results.sub': 'Complétez l\'évaluation pour voir vos résultats.',
     'results.start': 'Démarrer l\'évaluation',
+
+    // Anonymous results section
+    'results.anon.title': 'Vos données contribuent à la vision mondiale',
+    'results.anon.desc': 'Une fois les réponses de votre région collectées, nous partagerons les résultats anonymisés et agrégés avec tous les participants. Vous pourrez comparer votre niveau de maturité avec celui des régulateurs et opérateurs désignés de votre région — sans qu\'aucune donnée individuelle ne soit divulguée.',
+    'results.anon.badge': 'Rapport Régional Anonymisé',
+
+    // Contact section
+    'results.contact.title': 'Vous voyez le besoin. Passez à l\'action.',
+    'results.contact.desc': 'Contactez l\'équipe ONE Solutions pour une démonstration spécifique à votre pays, adaptée à votre mandat réglementaire. L\'équipe ONE Solutions est prête à discuter des besoins spécifiques de votre pays — du cadrage initial jusqu\'à la mise en œuvre complète.',
+    'results.contact.schedule': 'Planifier une Réunion',
+    'results.contact.email': 'E-mail',
+    'results.contact.teams': 'Appeler via Microsoft Teams',
+    'results.contact.role1': 'Responsable Solutions ONE, Union Postale Universelle',
+    'results.contact.role2': 'Responsable Technique de Compte, Union Postale Universelle',
 
     'benchmark.title': 'Benchmark Mondial',
     'benchmark.sub': 'Comparez vos résultats avec des données mondiales anonymisées',
@@ -548,6 +590,20 @@ const translations: Record<Lang, Record<string, string>> = {
     'results.no_results.sub': 'أكمل التقييم لعرض نتائجك.',
     'results.start': 'بدء التقييم',
 
+    // Anonymous results section
+    'results.anon.title': 'بياناتك تساهم في رسم الصورة العالمية',
+    'results.anon.desc': 'بمجرد جمع ردود منطقتك، سنشارك النتائج المجهولة والمجمعة مع جميع المشاركين. ستتمكن من مقارنة مستوى نضجك مع المنظمين والمشغلين المعينين الآخرين — دون الكشف عن أي بيانات فردية.',
+    'results.anon.badge': 'تقرير إقليمي مجهول',
+
+    // Contact section
+    'results.contact.title': 'ترى الحاجة. اتخذ إجراءً.',
+    'results.contact.desc': 'تواصل مع فريق حلول ONE للحصول على عرض توضيحي خاص ببلدك، مصمم وفق تفويضك التنظيمي. فريق حلول ONE مستعد لمناقشة الاحتياجات الخاصة ببلدك — من التحديد الأولي للنطاق وحتى التنفيذ الكامل.',
+    'results.contact.schedule': 'جدولة اجتماع',
+    'results.contact.email': 'البريد الإلكتروني',
+    'results.contact.teams': 'الاتصال عبر Microsoft Teams',
+    'results.contact.role1': 'مدير حلول ONE، الاتحاد البريدي العالمي',
+    'results.contact.role2': 'مدير الحسابات التقنية، الاتحاد البريدي العالمي',
+
     'benchmark.title': 'المعيار المرجعي العالمي',
     'benchmark.sub': 'قارن نتائجك مع بيانات عالمية مجهولة المصدر',
     'market.title': 'مزودو الحلول',
@@ -679,6 +735,20 @@ const translations: Record<Lang, Record<string, string>> = {
     'results.no_results': 'Результаты не найдены',
     'results.no_results.sub': 'Завершите оценку, чтобы просмотреть результаты.',
     'results.start': 'Начать оценку',
+
+    // Anonymous results section
+    'results.anon.title': 'Ваши данные помогают формировать глобальную картину',
+    'results.anon.desc': 'После сбора ответов из вашего региона мы поделимся анонимизированными и агрегированными результатами со всеми участниками. Вы сможете сравнить свой уровень зрелости с уровнем других регуляторов и назначенных операторов — без раскрытия индивидуальных данных.',
+    'results.anon.badge': 'Анонимный региональный отчёт',
+
+    // Contact section
+    'results.contact.title': 'Вы видите потребность. Действуйте.',
+    'results.contact.desc': 'Свяжитесь с командой ONE Solutions для демонстрации, адаптированной к вашей стране и регуляторному мандату. Команда ONE Solutions готова обсудить конкретные потребности вашей страны — от первоначального планирования до полного внедрения.',
+    'results.contact.schedule': 'Запланировать встречу',
+    'results.contact.email': 'Эл. почта',
+    'results.contact.teams': 'Позвонить через Microsoft Teams',
+    'results.contact.role1': 'Менеджер решений ONE, Всемирный почтовый союз',
+    'results.contact.role2': 'Технический менеджер по работе с клиентами, Всемирный почтовый союз',
 
     'benchmark.title': 'Глобальный бенчмарк',
     'benchmark.sub': 'Сравните свои результаты с анонимизированными глобальными данными',
