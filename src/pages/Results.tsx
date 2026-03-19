@@ -745,7 +745,7 @@ Return ONLY valid JSON, no markdown, no extra text.`
 
         {/* Anonymous Regional Results Banner */}
         <div
-          className="rounded-2xl p-8 text-white print:hidden"
+          className="rounded-2xl p-8 text-white no-print"
           style={{ background: 'linear-gradient(135deg, var(--brand-navy) 0%, #0a4a8c 100%)' }}
         >
           <div className="flex flex-col md:flex-row items-start md:items-center gap-6">
@@ -776,7 +776,7 @@ Return ONLY valid JSON, no markdown, no extra text.`
         </div>
 
         {/* Contact Section */}
-        <div className="rounded-2xl overflow-hidden print:hidden" style={{ border: '1px solid #E5E7EB' }}>
+        <div className="rounded-2xl overflow-hidden no-print" style={{ border: '1px solid #E5E7EB' }}>
           {/* Header */}
           <div
             className="px-8 py-10 text-center"

@@ -182,7 +182,7 @@
 /* ── Print / PDF styles ── */
 @media print {
   /* Hide non-report elements */
-  nav, footer, .print\:hidden { display: none !important; }
+  nav, footer, .print\:hidden, .no-print { display: none !important; }
 
   body { background: white !important; color: #1A202C !important; }
 
