@@ -368,13 +368,6 @@ export default function Home() {
         }} />
 
         <div className="relative max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
-          {/* Logos row */}
-          <div className={`flex items-center gap-6 mb-10 ${isRTL ? 'flex-row-reverse' : ''}`}>
-            <img src="/upu-logo-white.png" alt="Universal Postal Union" className="h-12 w-auto object-contain rounded" style={{ maxWidth: '180px' }} />
-            <div className="w-px h-8 bg-white/20" />
-            <img src="/one-logo-white.png" alt="ONE for Regulators" className="h-12 w-auto object-contain" style={{ maxWidth: '180px' }} />
-          </div>
-
           {/* Eyebrow */}
           <p className={`text-white/40 text-xs font-semibold uppercase tracking-widest mb-4 ${isRTL ? 'text-right' : ''}`}>
             {c.eyebrow}
