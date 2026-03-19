@@ -1,8 +1,9 @@
 import type { Handler } from '@netlify/functions'
 
-const OPENAI_API_KEY = process.env.OPENAI_API_KEY
+const GEMINI_API_KEY = process.env.GEMINI_API_KEY
 
 const PHASE_NAMES: Record<string, string> = {
+  phase0: 'Regulatory Context',
   phase1: 'Measurement System Design',
   phase2: 'Ecosystem Mapping',
   phase3: 'SLA Establishment',
@@ -20,15 +21,23 @@ function getLevel(score: number): string {
   return 'Optimized'
 }
 
+function getNextLevel(score: number): string {
+  if (score < 20) return 'Developing'
+  if (score < 40) return 'Defined'
+  if (score < 60) return 'Managed'
+  if (score < 80) return 'Optimized'
+  return 'Optimized'
+}
+
 export const handler: Handler = async (event) => {
   if (event.httpMethod !== 'POST') {
     return { statusCode: 405, body: 'Method Not Allowed' }
   }
 
-  if (!OPENAI_API_KEY) {
+  if (!GEMINI_API_KEY) {
     return {
       statusCode: 503,
-      body: JSON.stringify({ error: 'OpenAI API key not configured. Set OPENAI_API_KEY in Netlify environment variables.' })
+      body: JSON.stringify({ error: 'Gemini API key not configured. Set GEMINI_API_KEY in Netlify environment variables.' })
     }
   }
 
@@ -39,6 +48,7 @@ export const handler: Handler = async (event) => {
     entityType: string
     country?: string
     respondentName?: string
+    lang?: string
   }
 
   try {
@@ -47,7 +57,10 @@ export const handler: Handler = async (event) => {
     return { statusCode: 400, body: JSON.stringify({ error: 'Invalid JSON body' }) }
   }
 
-  const { scores, gaps, institution, entityType, country, respondentName } = body
+  const { scores, gaps, institution, entityType, country, respondentName, lang = 'en' } = body
+
+  const currentLevel = getLevel(scores.global)
+  const nextLevel = getNextLevel(scores.global)
 
   const phaseScoresSummary = Object.entries(scores.byPhase)
     .map(([slug, score]) => `- ${PHASE_NAMES[slug] ?? slug}: ${score}% (${getLevel(score)})`)
@@ -57,21 +70,31 @@ export const handler: Handler = async (event) => {
     .map(g => `${PHASE_NAMES[g.phaseSlug] ?? g.phaseSlug} (${g.score}%, gap: ${g.gap}%)`)
     .join(', ')
 
-  const prompt = `You are an expert consultant in postal quality regulation and measurement for the Universal Postal Union (UPU) ONE for Regulators program.
+  const langInstruction = lang === 'es'
+    ? 'Respond entirely in Spanish.'
+    : lang === 'fr'
+    ? 'Respond entirely in French.'
+    : lang === 'ar'
+    ? 'Respond entirely in Arabic.'
+    : lang === 'ru'
+    ? 'Respond entirely in Russian.'
+    : 'Respond entirely in English.'
+
+  const prompt = `You are an expert consultant in postal quality regulation and measurement for the Universal Postal Union (UPU) ONE for Regulators program. ${langInstruction}
 
 Analyze the following postal quality maturity assessment results for ${institution} (${entityType === 'regulator' ? 'Postal Regulator' : 'Designated Operator'})${country ? ` in ${country}` : ''}${respondentName ? `, assessed by ${respondentName}` : ''}.
 
-GLOBAL SCORE: ${scores.global}% (${getLevel(scores.global)})
+GLOBAL SCORE: ${scores.global}% — Current level: ${currentLevel} → Target next level: ${nextLevel}
 
 PHASE SCORES:
 ${phaseScoresSummary}
 
-TOP GAPS: ${topGaps}
+TOP PRIORITY GAPS: ${topGaps}
 
-Provide a comprehensive analysis in JSON format with this exact structure:
+Provide a comprehensive analysis in JSON format with this exact structure (no markdown, pure JSON):
 {
   "executiveSummary": "3-4 paragraph executive summary of the maturity state, key findings and strategic recommendations",
-  "maturityLevel": "${getLevel(scores.global)}",
+  "maturityLevel": "${currentLevel}",
   "currentPhase": "Current development phase description",
   "keyInsights": ["insight 1", "insight 2", "insight 3", "insight 4"],
   "phaseAnalyses": [
@@ -84,55 +107,49 @@ Provide a comprehensive analysis in JSON format with this exact structure:
       "keyObstacles": ["obstacle 1", "obstacle 2"],
       "priorityActions": ["action 1", "action 2"]
     }
-    // ... for each phase with score data
   ],
-  "actionPlan": [
-    {
-      "action": "Action title",
-      "phase": "phase slug",
-      "description": "Detailed description",
-      "horizon": "short|medium|long",
-      "effort": "low|medium|high",
-      "impact": "low|medium|high",
-      "expectedOutcome": "Expected outcome"
-    }
-  ],
-  "roadmapNarrative": "3-4 paragraph narrative describing the recommended improvement roadmap over 24-36 months"
+  "roadmapNarrative": "3-4 paragraph narrative describing the recommended improvement roadmap. First section: actions to reach ${nextLevel}. Second section: long-term roadmap to reach Optimized level. Reference UPU standards (S58, S59) and measurement methodologies where relevant."
 }
 
-Focus on practical, actionable recommendations specific to postal regulation and quality measurement. Be specific about UPU standards (S58, S59), measurement methodologies, and regulatory frameworks.`
+Focus on practical, actionable recommendations specific to postal regulation and quality measurement. Be specific about UPU standards, measurement methodologies, and regulatory frameworks. The roadmap must clearly distinguish between short-term actions to reach ${nextLevel} and the long-term path to Optimized.`
 
   try {
-    const response = await fetch('https://api.openai.com/v1/chat/completions', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${OPENAI_API_KEY}`,
-      },
-      body: JSON.stringify({
-        model: 'gpt-4o-mini',
-        messages: [
-          { role: 'system', content: 'You are a UPU postal quality maturity expert. Always respond with valid JSON only, no markdown code blocks.' },
-          { role: 'user', content: prompt },
-        ],
-        temperature: 0.7,
-        max_tokens: 3000,
-      }),
-    })
+    const response = await fetch(
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${GEMINI_API_KEY}`,
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          contents: [
+            {
+              parts: [{ text: prompt }]
+            }
+          ],
+          generationConfig: {
+            temperature: 0.7,
+            maxOutputTokens: 4096,
+          },
+          systemInstruction: {
+            parts: [{ text: 'You are a UPU postal quality maturity expert. Always respond with valid JSON only, no markdown code blocks, no backticks.' }]
+          }
+        }),
+      }
+    )
 
     if (!response.ok) {
       const err = await response.text()
-      return { statusCode: 502, body: JSON.stringify({ error: `OpenAI error: ${err}` }) }
+      return { statusCode: 502, body: JSON.stringify({ error: `Gemini API error: ${err}` }) }
     }
 
     const data = await response.json()
-    const content = data.choices?.[0]?.message?.content ?? '{}'
+    const content = data.candidates?.[0]?.content?.parts?.[0]?.text ?? '{}'
 
     let analysis
     try {
-      analysis = JSON.parse(content)
+      // Strip possible markdown code fences
+      const cleaned = content.replace(/^```json\s*/i, '').replace(/^```\s*/i, '').replace(/```\s*$/i, '').trim()
+      analysis = JSON.parse(cleaned)
     } catch {
-      // Try to extract JSON from the response
       const match = content.match(/\{[\s\S]*\}/)
       analysis = match ? JSON.parse(match[0]) : { executiveSummary: content, phaseAnalyses: [], actionPlan: [], keyInsights: [] }
     }

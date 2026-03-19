@@ -101,6 +101,8 @@ export interface ActionItem {
   effort: 'low' | 'medium' | 'high'
   impact: 'low' | 'medium' | 'high'
   descriptionEn?: string
+  descriptionEs?: string
+  section?: 'next_level' | 'quality_total'
 }
 
 export interface LLMAnalysis {
