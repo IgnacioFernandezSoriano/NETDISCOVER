@@ -1,5 +1,4 @@
 import { useNavigate } from 'react-router-dom'
-import { useState, useEffect } from 'react'
 import { BarChart3, TrendingUp, Globe, Award, Shield, ArrowRight, ChevronRight } from 'lucide-react'
 import Navbar from '../components/Navbar'
 import Footer from '../components/Footer'
@@ -352,36 +351,6 @@ export default function Home() {
   const navigate = useNavigate()
   const { lang, isRTL } = useI18n()
   const c = (COPY as Record<string, typeof COPY.en>)[lang] ?? COPY.en
-  const [resumeToken, setResumeToken] = useState<string | null>(null)
-
-  useEffect(() => {
-    const t = localStorage.getItem('nd_token')
-    setResumeToken(t)
-  }, [])
-
-  const resumeLabel = lang === 'es' ? 'Tienes una evaluación en curso' :
-    lang === 'fr' ? 'Vous avez une évaluation en cours' :
-    lang === 'ar' ? 'لديك تقييم قيد التقدم' :
-    lang === 'ru' ? 'У вас есть незавершённая оценка' :
-    'You have an assessment in progress'
-
-  const resumeSubLabel = lang === 'es' ? 'Retoma donde lo dejaste. Tu progreso está guardado.' :
-    lang === 'fr' ? 'Reprenez là où vous vous êtes arrêté. Votre progression est sauvegardée.' :
-    lang === 'ar' ? 'استأنف من حيث توقفت. تقدمك محفوظ.' :
-    lang === 'ru' ? 'Продолжите с того места, где остановились. Ваш прогресс сохранён.' :
-    'Pick up where you left off. Your progress has been saved.'
-
-  const resumeBtn = lang === 'es' ? 'Continuar evaluación' :
-    lang === 'fr' ? 'Continuer l\'évaluation' :
-    lang === 'ar' ? 'متابعة التقييم' :
-    lang === 'ru' ? 'Продолжить оценку' :
-    'Continue Assessment'
-
-  const dismissLabel = lang === 'es' ? 'Descartar' :
-    lang === 'fr' ? 'Ignorer' :
-    lang === 'ar' ? 'تجاهل' :
-    lang === 'ru' ? 'Закрыть' :
-    'Dismiss'
 
   return (
     <div className="min-h-screen flex flex-col" dir={isRTL ? 'rtl' : 'ltr'}>
@@ -399,6 +368,13 @@ export default function Home() {
         }} />
 
         <div className="relative max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+          {/* Logos row */}
+          <div className={`flex items-center gap-6 mb-10 ${isRTL ? 'flex-row-reverse' : ''}`}>
+            <img src="/upu-logo-white.png" alt="Universal Postal Union" className="h-12 w-auto object-contain rounded" style={{ maxWidth: '180px' }} />
+            <div className="w-px h-8 bg-white/20" />
+            <img src="/one-logo-white.png" alt="ONE for Regulators" className="h-12 w-auto object-contain" style={{ maxWidth: '180px' }} />
+          </div>
+
           {/* Eyebrow */}
           <p className={`text-white/40 text-xs font-semibold uppercase tracking-widest mb-4 ${isRTL ? 'text-right' : ''}`}>
             {c.eyebrow}
@@ -439,48 +415,6 @@ export default function Home() {
           <div className="h-px bg-white/10 max-w-2xl" />
         </div>
       </section>
-
-      {/* ── RESUME BANNER ─────────────────────────────────── */}
-      {resumeToken && (
-        <div style={{ background: 'var(--brand-cyan)' }}>
-          <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
-            <div className={`flex items-center justify-between gap-4 flex-wrap ${isRTL ? 'flex-row-reverse' : ''}`}>
-              <div className={`flex items-center gap-3 ${isRTL ? 'flex-row-reverse' : ''}`}>
-                <div
-                  className="w-8 h-8 rounded-sm flex items-center justify-center flex-shrink-0"
-                  style={{ background: 'var(--brand-navy)' }}
-                >
-                  <ArrowRight size={14} className="text-white" />
-                </div>
-                <div className={isRTL ? 'text-right' : ''}>
-                  <p className="text-sm font-bold" style={{ color: 'var(--brand-navy)' }}>{resumeLabel}</p>
-                  <p className="text-xs" style={{ color: 'var(--brand-navy)', opacity: 0.7 }}>{resumeSubLabel}</p>
-                </div>
-              </div>
-              <div className={`flex items-center gap-3 ${isRTL ? 'flex-row-reverse' : ''}`}>
-                <button
-                  onClick={() => navigate('/assessment')}
-                  className="inline-flex items-center gap-2 px-5 py-2 text-xs font-bold rounded-sm transition-all hover:opacity-90"
-                  style={{ background: 'var(--brand-navy)', color: 'white' }}
-                >
-                  {resumeBtn}
-                  <ArrowRight size={13} />
-                </button>
-                <button
-                  onClick={() => {
-                    localStorage.removeItem('nd_token')
-                    setResumeToken(null)
-                  }}
-                  className="text-xs font-semibold underline hover:no-underline transition-all"
-                  style={{ color: 'var(--brand-navy)', opacity: 0.6 }}
-                >
-                  {dismissLabel}
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
 
       {/* ── CONTEXT ──────────────────────────────────────────── */}
       <section className="py-20 bg-white">

@@ -125,6 +125,15 @@ export function useAssessment() {
     return { scores, gaps, actionPlan }
   }, [answers, questions, phases, ensureSession])
 
+  // Update session email (for Save & Continue)
+  const updateSessionEmail = useCallback(async (email: string) => {
+    const t = await ensureSession()
+    await supabase
+      .from('guest_sessions')
+      .update({ email: email.trim().toLowerCase() })
+      .eq('token', t)
+  }, [ensureSession])
+
   // Restore session from token
   const restoreFromToken = useCallback(async (t: string): Promise<boolean> => {
     const { data } = await supabase
@@ -173,5 +182,6 @@ export function useAssessment() {
     questionsForPhase,
     phaseCompletionRate,
     ensureSession,
+    updateSessionEmail,
   }
 }

@@ -1,19 +1,29 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect } from 'react'
 import { useLocation, useNavigate, useSearchParams } from 'react-router-dom'
 import { useI18n } from '../lib/i18n'
 import {
   RadarChart, PolarGrid, PolarAngleAxis, Radar, ResponsiveContainer,
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Cell
 } from 'recharts'
-import { Download, Loader2, AlertCircle, ChevronDown, ChevronUp, Zap, TrendingUp, ArrowRight, Clock, Target, Edit3, CheckCircle2, Mail, Users, Globe, CalendarCheck } from 'lucide-react'
+import { ArrowRight, Download, Loader2, AlertCircle, ChevronDown, ChevronUp, Zap, TrendingUp, Clock } from 'lucide-react'
 import Navbar from '../components/Navbar'
 import Footer from '../components/Footer'
 import { supabase } from '../lib/supabase'
-import { getMaturityLevel, getMaturityColor, getNextMaturityLevel, PHASE_DESCRIPTIONS } from '../lib/scoring'
+import { getMaturityLevel, getMaturityColor } from '../lib/scoring'
 import type { ScoreResult, Gap, ActionItem, GuestSession, LLMAnalysis } from '../lib/supabase'
 
+const PHASE_NAMES: Record<string, string> = {
+  phase0: 'Context',
+  phase1: 'Measurement',
+  phase2: 'Ecosystem',
+  phase3: 'SLAs',
+  phase4: 'Network',
+  phase5: 'Improvement',
+  phase6: 'Enforcement',
+  phase7: 'Maturity',
+}
+
 const PHASE_COLORS: Record<string, string> = {
-  phase0: '#64748B',
   phase1: '#0077C8',
   phase2: '#7C3AED',
   phase3: '#059669',
@@ -21,16 +31,6 @@ const PHASE_COLORS: Record<string, string> = {
   phase5: '#DC2626',
   phase6: '#0891B2',
   phase7: '#7C3AED',
-}
-
-// Maturity levels in order
-const MATURITY_LEVELS = ['Initial', 'Developing', 'Defined', 'Managed', 'Optimized']
-const MATURITY_COLORS: Record<string, string> = {
-  Initial: '#EF4444',
-  Developing: '#F97316',
-  Defined: '#EAB308',
-  Managed: '#22C55E',
-  Optimized: '#0077C8',
 }
 
 function MaturityBadge({ level }: { level: string }) {
@@ -43,121 +43,30 @@ function MaturityBadge({ level }: { level: string }) {
 }
 
 function PriorityBadge({ priority }: { priority: string }) {
-  const colors: Record<string, string> = {
-    high: 'bg-red-50 text-red-700',
-    medium: 'bg-amber-50 text-amber-700',
-    low: 'bg-green-50 text-green-700',
-  }
+  const cls = `priority-${priority}`
   return (
-    <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-semibold ${colors[priority] ?? 'bg-gray-50 text-gray-600'}`}>
+    <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-semibold ${cls}`}>
       {priority.toUpperCase()}
     </span>
   )
 }
 
 function HorizonBadge({ horizon }: { horizon: string }) {
-  const styles: Record<string, { bg: string; text: string; label: string }> = {
-    short: { bg: '#EFF6FF', text: '#1D4ED8', label: '0–6 months' },
-    medium: { bg: '#F5F3FF', text: '#6D28D9', label: '6–18 months' },
-    long: { bg: '#F0FDF4', text: '#15803D', label: '18+ months' },
+  const colors: Record<string, string> = {
+    short: 'bg-blue-50 text-blue-700',
+    medium: 'bg-purple-50 text-purple-700',
+    long: 'bg-gray-50 text-gray-600',
   }
-  const s = styles[horizon] ?? styles.long
+  const labels: Record<string, string> = { short: '0–6 months', medium: '6–18 months', long: '18+ months' }
   return (
-    <span
-      className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-medium"
-      style={{ background: s.bg, color: s.text }}
-    >
+    <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-medium ${colors[horizon] ?? 'bg-gray-50 text-gray-600'}`}>
       <Clock size={10} />
-      {s.label}
+      {labels[horizon] ?? horizon}
     </span>
   )
 }
 
-// ── Horizontal Maturity Timeline ─────────────────────────────────────────────
-function MaturityTimeline({ currentLevel, t }: { currentLevel: string; t: (k: string) => string }) {
-  const currentIdx = MATURITY_LEVELS.indexOf(currentLevel)
-
-  return (
-    <div className="card p-6 overflow-x-auto">
-      <h2 className="section-heading text-base font-bold mb-2" style={{ color: 'var(--brand-navy)' }}>
-        Maturity Roadmap
-      </h2>
-      <p className="text-xs text-gray-400 mb-6">{t('results.roadmap.sub')}</p>
-
-      {/* Timeline track */}
-      <div className="relative min-w-[600px]">
-        {/* Connector line */}
-        <div className="absolute top-8 left-[10%] right-[10%] h-1 rounded-full" style={{ background: '#E5E7EB' }} />
-        {/* Filled progress */}
-        <div
-          className="absolute top-8 left-[10%] h-1 rounded-full transition-all duration-700"
-          style={{
-            background: 'linear-gradient(90deg, #EF4444, #F97316, #EAB308, #22C55E, #0077C8)',
-            width: `${(currentIdx / (MATURITY_LEVELS.length - 1)) * 80}%`,
-          }}
-        />
-
-        {/* Nodes */}
-        <div className="flex justify-between relative z-10">
-          {MATURITY_LEVELS.map((level, idx) => {
-            const isPast = idx < currentIdx
-            const isCurrent = idx === currentIdx
-            const isFuture = idx > currentIdx
-            const color = MATURITY_COLORS[level]
-
-            return (
-              <div key={level} className="flex flex-col items-center gap-2 flex-1">
-                {/* Node circle */}
-                <div
-                  className="w-16 h-16 rounded-full flex items-center justify-center border-4 transition-all duration-300 shadow-sm"
-                  style={{
-                    borderColor: isFuture ? '#E5E7EB' : color,
-                    background: isCurrent ? color : isPast ? `${color}20` : '#F9FAFB',
-                    boxShadow: isCurrent ? `0 0 0 6px ${color}25` : undefined,
-                  }}
-                >
-                  {isPast ? (
-                    <CheckCircle2 size={24} style={{ color }} />
-                  ) : isCurrent ? (
-                    <span className="text-white font-black text-sm">NOW</span>
-                  ) : (
-                    <span className="text-xs font-bold" style={{ color: '#D1D5DB' }}>{idx + 1}</span>
-                  )}
-                </div>
-
-                {/* Label */}
-                <div className="text-center">
-                  <p
-                    className="text-xs font-bold"
-                    style={{ color: isFuture ? '#9CA3AF' : color }}
-                  >
-                    {level}
-                  </p>
-                  {isCurrent && (
-                    <span
-                      className="inline-block mt-1 text-xs px-2 py-0.5 rounded-full font-semibold text-white"
-                      style={{ background: color }}
-                    >
-                      {t('results.roadmap.current')}
-                    </span>
-                  )}
-                  {isFuture && idx === currentIdx + 1 && (
-                    <span className="inline-block mt-1 text-xs px-2 py-0.5 rounded-full font-medium" style={{ background: '#F3F4F6', color: '#6B7280' }}>
-                      {t('results.roadmap.next')}
-                    </span>
-                  )}
-                </div>
-              </div>
-            )
-          })}
-        </div>
-      </div>
-    </div>
-  )
-}
-
-// ── LLM Analysis Section ─────────────────────────────────────────────────────
-function LLMSection({ analysis, t, lang }: { analysis: LLMAnalysis; t: (k: string) => string; lang: string }) {
+function LLMSection({ analysis }: { analysis: LLMAnalysis }) {
   const [expanded, setExpanded] = useState<string | null>('summary')
 
   return (
@@ -172,7 +81,7 @@ function LLMSection({ analysis, t, lang }: { analysis: LLMAnalysis; t: (k: strin
             <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ background: 'var(--brand-light)' }}>
               <Zap size={16} style={{ color: 'var(--brand-navy)' }} />
             </div>
-            <h3 className="font-bold" style={{ color: 'var(--brand-navy)' }}>{t('results.ai.summary')}</h3>
+            <h3 className="font-bold" style={{ color: 'var(--brand-navy)' }}>Executive Summary</h3>
           </div>
           {expanded === 'summary' ? <ChevronUp size={16} className="text-gray-400" /> : <ChevronDown size={16} className="text-gray-400" />}
         </button>
@@ -206,7 +115,7 @@ function LLMSection({ analysis, t, lang }: { analysis: LLMAnalysis; t: (k: strin
             <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ background: 'var(--brand-light)' }}>
               <TrendingUp size={16} style={{ color: 'var(--brand-navy)' }} />
             </div>
-            <h3 className="font-bold" style={{ color: 'var(--brand-navy)' }}>{t('results.ai.phases')}</h3>
+            <h3 className="font-bold" style={{ color: 'var(--brand-navy)' }}>Phase-by-Phase Analysis</h3>
           </div>
           {expanded === 'phases' ? <ChevronUp size={16} className="text-gray-400" /> : <ChevronDown size={16} className="text-gray-400" />}
         </button>
@@ -222,13 +131,13 @@ function LLMSection({ analysis, t, lang }: { analysis: LLMAnalysis; t: (k: strin
                 <p className="text-sm text-gray-600 leading-relaxed mb-3">{pa.narrative}</p>
                 {pa.keyObstacles?.length > 0 && (
                   <div className="mb-2">
-                    <span className="text-xs font-semibold text-red-600 uppercase tracking-wide">{t('results.ai.obstacles')}: </span>
+                    <span className="text-xs font-semibold text-red-600 uppercase tracking-wide">Key obstacles: </span>
                     <span className="text-xs text-gray-500">{pa.keyObstacles.join(' · ')}</span>
                   </div>
                 )}
                 {pa.priorityActions?.length > 0 && (
                   <div>
-                    <span className="text-xs font-semibold text-green-600 uppercase tracking-wide">{t('results.ai.actions')}: </span>
+                    <span className="text-xs font-semibold text-green-600 uppercase tracking-wide">Priority actions: </span>
                     <span className="text-xs text-gray-500">{pa.priorityActions.join(' · ')}</span>
                   </div>
                 )}
@@ -249,7 +158,7 @@ function LLMSection({ analysis, t, lang }: { analysis: LLMAnalysis; t: (k: strin
               <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ background: 'var(--brand-light)' }}>
                 <ArrowRight size={16} style={{ color: 'var(--brand-navy)' }} />
               </div>
-              <h3 className="font-bold" style={{ color: 'var(--brand-navy)' }}>{t('results.ai.roadmap')}</h3>
+              <h3 className="font-bold" style={{ color: 'var(--brand-navy)' }}>Roadmap Narrative</h3>
             </div>
             {expanded === 'roadmap' ? <ChevronUp size={16} className="text-gray-400" /> : <ChevronDown size={16} className="text-gray-400" />}
           </button>
@@ -264,7 +173,6 @@ function LLMSection({ analysis, t, lang }: { analysis: LLMAnalysis; t: (k: strin
   )
 }
 
-// ── Main Component ────────────────────────────────────────────────────────────
 export default function Results() {
   const location = useLocation()
   const navigate = useNavigate()
@@ -275,8 +183,6 @@ export default function Results() {
     en: { phase0: 'Context', phase1: 'Measurement', phase2: 'Ecosystem', phase3: 'SLAs', phase4: 'Network', phase5: 'Improvement', phase6: 'Enforcement', phase7: 'Maturity' },
     es: { phase0: 'Contexto', phase1: 'Medición', phase2: 'Ecosistema', phase3: 'SLAs', phase4: 'Red', phase5: 'Mejora', phase6: 'Cumplimiento', phase7: 'Madurez' },
     fr: { phase0: 'Contexte', phase1: 'Mesure', phase2: 'Écosystème', phase3: 'SLAs', phase4: 'Réseau', phase5: 'Amélioration', phase6: 'Application', phase7: 'Maturité' },
-    ar: { phase0: 'السياق', phase1: 'القياس', phase2: 'النظام البيئي', phase3: 'SLAs', phase4: 'الشبكة', phase5: 'التحسين', phase6: 'التطبيق', phase7: 'النضج' },
-    ru: { phase0: 'Контекст', phase1: 'Измерение', phase2: 'Экосистема', phase3: 'SLAs', phase4: 'Сеть', phase5: 'Улучшение', phase6: 'Применение', phase7: 'Зрелость' },
   }
   const phaseNames = PHASE_NAMES_I18N[lang] ?? PHASE_NAMES_I18N.en
 
@@ -288,14 +194,12 @@ export default function Results() {
   const [loadingAnalysis, setLoadingAnalysis] = useState(false)
   const [analysisError, setAnalysisError] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
-  const [analysisTriggered, setAnalysisTriggered] = useState(false)
-  const forceRegenerate = location.state?.forceRegenerate === true
 
   const token = location.state?.token ?? searchParams.get('token') ?? localStorage.getItem('nd_token')
 
-  // Load session + scores from Supabase if not in state
+  // Load session if no state
   useEffect(() => {
-    if (session || !token) return
+    if (scores || !token) return
     async function load() {
       setLoading(true)
       const { data } = await supabase
@@ -305,105 +209,49 @@ export default function Results() {
         .single()
       if (data) {
         setSession(data)
-        if (!scores) {
-          setScores(data.scores)
-          setGaps(data.gaps ?? [])
-          setActionPlan(data.action_plan ?? [])
-        }
-        if (!forceRegenerate && data.llm_analysis) {
-          setLlmAnalysis(data.llm_analysis)
-        }
+        setScores(data.scores)
+        setGaps(data.gaps ?? [])
+        setActionPlan(data.action_plan ?? [])
+        setLlmAnalysis(data.llm_analysis)
       }
       setLoading(false)
     }
     load()
-  }, [token])
+  }, [token, scores])
 
-  const handleGenerateAnalysis = useCallback(async (currentScores: ScoreResult, currentSession: GuestSession) => {
+  const handleGenerateAnalysis = async () => {
+    if (!scores || !session) return
     setLoadingAnalysis(true)
     setAnalysisError(null)
     try {
-      // Gemini direct call with obfuscated key
-      const _k = ['QUlhYVN5RHRZLU1kdE5TTG5v', 'WEVIR05NVnBjY1VTbkhTeVBrQjc4']
-      const apiKey = atob(_k[0]) + atob(_k[1])
-      const institution = currentSession.organization ?? currentSession.name ?? 'Unknown'
-      const entityType = currentSession.entity_type ?? 'regulator'
-      const country = currentSession.country ?? ''
-      const respondentName = currentSession.name ?? ''
-
-      const systemPrompt = lang === 'es'
-        ? `Eres un experto en calidad postal y regulación de servicios postales de la UPU. Analiza los resultados de madurez postal de ${institution} (${entityType === 'regulator' ? 'Regulador Postal' : 'Operador Designado'}) en ${country}. Responde SIEMPRE en español.`
-        : lang === 'fr'
-        ? `Vous êtes un expert en qualité postale et régulation des services postaux de l'UPU. Analysez les résultats de maturité postale de ${institution}. Répondez TOUJOURS en français.`
-        : `You are an expert in postal quality and UPU postal service regulation. Analyze the postal maturity results of ${institution} (${entityType}). Always respond in English.`
-
-      const userPrompt = `
-Respondent: ${respondentName} from ${institution} (${country})
-Global Score: ${currentScores.global}/100
-Phase Scores: ${JSON.stringify(currentScores.byPhase)}
-Top Gaps: ${JSON.stringify(gaps ?? [])}
-
-Provide a structured JSON analysis with this exact format:
-{
-  "executiveSummary": "3-4 paragraph executive summary",
-  "keyInsights": ["insight1", "insight2", "insight3"],
-  "phaseAnalyses": [
-    {
-      "slug": "phase1",
-      "name": "Phase name",
-      "score": 45,
-      "level": "Developing",
-      "narrative": "2-3 sentence analysis",
-      "keyObstacles": ["obstacle1"],
-      "priorityActions": ["action1"]
-    }
-  ],
-  "roadmapNarrative": "Strategic roadmap narrative"
-}
-Return ONLY valid JSON, no markdown, no extra text.`
-
-      const res = await fetch(
-        `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`,
-        {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            system_instruction: { parts: [{ text: systemPrompt }] },
-            contents: [{ role: 'user', parts: [{ text: userPrompt }] }],
-            generationConfig: { temperature: 0.4, maxOutputTokens: 4096 },
-          }),
-        }
-      )
-      if (!res.ok) throw new Error(t('results.ai.error'))
+      const res = await fetch('/.netlify/functions/analyze', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          scores,
+          gaps,
+          institution: session.organization ?? 'Unknown',
+          entityType: session.entity_type ?? 'regulator',
+          country: session.country,
+          respondentName: session.name,
+        }),
+      })
+      if (!res.ok) throw new Error('Analysis service unavailable')
       const data = await res.json()
-      const raw = data.candidates?.[0]?.content?.parts?.[0]?.text ?? ''
-      const jsonStr = raw.replace(/^```json\s*/i, '').replace(/```\s*$/i, '').trim()
-      const analysis: LLMAnalysis = JSON.parse(jsonStr)
-      setLlmAnalysis(analysis)
+      setLlmAnalysis(data.analysis)
+      // Save to Supabase
       if (token) {
         await supabase
           .from('guest_sessions')
-          .update({ llm_analysis: analysis })
+          .update({ llm_analysis: data.analysis })
           .eq('token', token)
       }
     } catch (e) {
-      setAnalysisError(e instanceof Error ? e.message : t('results.ai.error'))
+      setAnalysisError(e instanceof Error ? e.message : 'Failed to generate analysis')
     } finally {
       setLoadingAnalysis(false)
     }
-  }, [gaps, lang, t, token])
-
-  // Auto-generate analysis once session and scores are both ready
-  useEffect(() => {
-    if (analysisTriggered || loadingAnalysis || !scores || !session) return
-    if (llmAnalysis && !forceRegenerate) return
-    setAnalysisTriggered(true)
-    handleGenerateAnalysis(scores, session)
-  }, [scores, session, llmAnalysis, loadingAnalysis, analysisTriggered, forceRegenerate, handleGenerateAnalysis])
-
-  const handleDownloadPDF = useCallback(() => {
-    window.print()
-  }, [])
+  }
 
   if (loading) {
     return (
@@ -423,13 +271,13 @@ Return ONLY valid JSON, no markdown, no extra text.`
         <div className="flex-1 flex items-center justify-center p-4">
           <div className="card p-8 max-w-md w-full text-center">
             <AlertCircle size={32} className="mx-auto mb-4 text-amber-500" />
-            <h2 className="font-bold text-lg mb-2" style={{ color: 'var(--brand-navy)' }}>{t('results.no_results')}</h2>
-            <p className="text-sm text-gray-500 mb-4">{t('results.no_results.sub')}</p>
+            <h2 className="font-bold text-lg mb-2" style={{ color: 'var(--brand-navy)' }}>No results found</h2>
+            <p className="text-sm text-gray-500 mb-4">Complete the assessment to view your results.</p>
             <button
               onClick={() => navigate('/assessment')}
               className="btn-primary mx-auto"
             >
-              {t('results.start')}
+              Start Assessment
             </button>
           </div>
         </div>
@@ -439,11 +287,6 @@ Return ONLY valid JSON, no markdown, no extra text.`
 
   const maturityLevel = getMaturityLevel(scores.global)
   const maturityColor = getMaturityColor(maturityLevel)
-  const nextLevel = getNextMaturityLevel(scores.global)
-  const reportDate = new Date().toLocaleDateString(
-    lang === 'ar' ? 'ar-SA' : lang === 'ru' ? 'ru-RU' : lang === 'fr' ? 'fr-FR' : lang === 'es' ? 'es-ES' : 'en-GB',
-    { year: 'numeric', month: 'long', day: 'numeric' }
-  )
 
   const radarData = Object.entries(scores.byPhase).map(([slug, score]) => ({
     subject: phaseNames[slug] ?? slug,
@@ -457,22 +300,12 @@ Return ONLY valid JSON, no markdown, no extra text.`
     score,
   }))
 
-  const nextLevelActions = actionPlan.filter(a => a.section === 'next_level')
-  const qualityTotalActions = actionPlan.filter(a => a.section === 'quality_total')
-  const allActionsAreUnsectioned = actionPlan.every(a => !a.section)
-  const displayNextLevel = allActionsAreUnsectioned ? actionPlan : nextLevelActions
-  const displayQualityTotal = allActionsAreUnsectioned ? [] : qualityTotalActions
-
-  // Organization name: prefer organization field, fallback to name
-  const orgName = session?.organization || session?.name || 'Your Organization'
-  const respondentName = session?.organization ? session?.name : null
-
   return (
     <div className="min-h-screen flex flex-col bg-gray-50">
       <Navbar />
 
       {/* Hero score */}
-      <section style={{ background: 'var(--brand-navy)' }} className="py-12 print:py-6">
+      <section style={{ background: 'var(--brand-navy)' }} className="py-12">
         <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex flex-col md:flex-row items-center md:items-start gap-8">
             {/* Score circle */}
@@ -492,37 +325,18 @@ Return ONLY valid JSON, no markdown, no extra text.`
             {/* Info */}
             <div className="flex-1 text-center md:text-left">
               <p className="section-label mb-2">{t('results.title')}</p>
-              <h1 className="text-2xl md:text-3xl font-bold text-white mb-1" style={{ letterSpacing: '-0.02em' }}>
-                {orgName}
+              <h1 className="text-2xl md:text-3xl font-bold text-white mb-3" style={{ letterSpacing: '-0.02em' }}>
+                {session?.organization ?? 'Your Organization'}
               </h1>
-              {respondentName && (
-                <p className="text-white/60 text-sm mb-1">{respondentName}</p>
-              )}
-              <p className="text-white/50 text-sm mb-3">
+              <p className="text-white/50 text-sm mb-4">
                 {session?.country && `${session.country} · `}
-                {session?.entity_type === 'regulator' ? t('results.regulator') : t('results.operator')}
+                {session?.entity_type === 'regulator' ? 'Postal Regulator' : 'Designated Operator'}
               </p>
-              <p className="text-white/40 text-xs mb-4">
-                {t('results.date')}: {reportDate}
-              </p>
-
-              {/* Current → Next level */}
-              <div className="flex flex-wrap items-center gap-2 mb-3">
-                <span className="text-xs text-white/40">{t('results.current_level')}:</span>
-                <MaturityBadge level={maturityLevel} />
-                {maturityLevel !== 'Optimized' && (
-                  <>
-                    <ArrowRight size={12} className="text-white/30" />
-                    <span className="text-xs text-white/40">{t('results.next_level')}:</span>
-                    <MaturityBadge level={nextLevel} />
-                  </>
-                )}
-              </div>
 
               {/* Top gaps */}
               {gaps.length > 0 && (
                 <div className="flex flex-wrap gap-2">
-                  <span className="text-xs text-white/40 self-center">{t('results.topgaps')}:</span>
+                  <span className="text-xs text-white/40 self-center">Top gaps:</span>
                   {gaps.map(g => (
                     <span
                       key={g.phaseSlug}
@@ -536,15 +350,22 @@ Return ONLY valid JSON, no markdown, no extra text.`
               )}
             </div>
 
-            {/* Download PDF button */}
-            <div className="flex flex-col gap-2 print:hidden">
+            {/* Actions */}
+            <div className="flex flex-col gap-2">
               <button
-                onClick={handleDownloadPDF}
+                onClick={() => navigate('/benchmark', { state: { userScore: scores.global } })}
+                className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-white/80 hover:text-white border border-white/20 hover:border-white/40 rounded transition-all"
+              >
+                {t('results.benchmark')}
+                <ArrowRight size={14} />
+              </button>
+              <button
+                onClick={() => navigate('/market')}
                 className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-white rounded transition-all"
                 style={{ background: 'var(--brand-cyan)' }}
               >
-                <Download size={14} />
-                {t('results.download')}
+                {t('market.title')}
+                <ArrowRight size={14} />
               </button>
             </div>
           </div>
@@ -553,15 +374,12 @@ Return ONLY valid JSON, no markdown, no extra text.`
 
       <main className="flex-1 max-w-5xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-8 space-y-8">
 
-        {/* Maturity Timeline */}
-        <MaturityTimeline currentLevel={maturityLevel} t={t} />
-
         {/* Charts */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {/* Radar */}
           <div className="card p-6">
             <h2 className="section-heading text-base font-bold mb-6" style={{ color: 'var(--brand-navy)' }}>
-              {t('results.radar')}
+              Maturity Radar
             </h2>
             <ResponsiveContainer width="100%" height={260}>
               <RadarChart data={radarData}>
@@ -582,7 +400,7 @@ Return ONLY valid JSON, no markdown, no extra text.`
           {/* Bar chart */}
           <div className="card p-6">
             <h2 className="section-heading text-base font-bold mb-6" style={{ color: 'var(--brand-navy)' }}>
-              {t('results.bar')}
+              Score by Phase
             </h2>
             <ResponsiveContainer width="100%" height={260}>
               <BarChart data={barData} layout="vertical" margin={{ left: 10, right: 20 }}>
@@ -605,121 +423,94 @@ Return ONLY valid JSON, no markdown, no extra text.`
 
         {/* Phase scores grid */}
         <div>
-          <div className="mb-5">
-            <h2 className="section-heading text-base font-bold" style={{ color: 'var(--brand-navy)' }}>
-              {t('results.phases')}
-            </h2>
-            <p className="text-sm text-gray-400 mt-1">{t('results.phases.sub')}</p>
-          </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <h2 className="section-heading text-base font-bold mb-5" style={{ color: 'var(--brand-navy)' }}>
+            Phase Scores
+          </h2>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             {Object.entries(scores.byPhase).map(([slug, score]) => {
               const level = getMaturityLevel(score)
-              const phaseDesc = PHASE_DESCRIPTIONS[slug]
-              const descText = phaseDesc ? (lang === 'es' ? phaseDesc.es : phaseDesc.en) : ''
               return (
-                <div key={slug} className="card p-5">
+                <div key={slug} className="card p-4">
                   <div className="flex items-center justify-between mb-2">
-                    <span className="text-sm font-semibold" style={{ color: 'var(--brand-navy)' }}>{phaseNames[slug] ?? slug}</span>
-                    <span className="text-xl font-black" style={{ color: PHASE_COLORS[slug] ?? 'var(--brand-navy)' }}>
+                    <span className="text-xs font-medium text-gray-500">{phaseNames[slug] ?? slug}</span>
+                    <span className="text-lg font-black" style={{ color: PHASE_COLORS[slug] ?? 'var(--brand-navy)' }}>
                       {score}%
                     </span>
                   </div>
-                  <div className="progress-bar mb-3">
+                  <div className="progress-bar mb-2">
                     <div
                       className="progress-fill"
                       style={{ width: `${score}%`, background: PHASE_COLORS[slug] ?? 'var(--brand-cyan)' }}
                     />
                   </div>
-                  <div className="flex items-center justify-between mb-3">
-                    <MaturityBadge level={level} />
-                  </div>
-                  {descText && (
-                    <p className="text-xs text-gray-500 leading-relaxed border-t pt-3 mt-1">{descText}</p>
-                  )}
+                  <MaturityBadge level={level} />
                 </div>
               )
             })}
           </div>
         </div>
 
-        {/* Action Plan — Next Level */}
-        {displayNextLevel.length > 0 && (
+        {/* Action Plan */}
+        {actionPlan.length > 0 && (
           <div>
-            <div className="flex items-center gap-3 mb-5">
-              <div className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0" style={{ background: 'var(--brand-navy)' }}>
-                <Target size={16} className="text-white" />
-              </div>
-              <div>
-                <h2 className="section-heading text-base font-bold" style={{ color: 'var(--brand-navy)' }}>
-                  {t('results.action.next')}
-                </h2>
-                <p className="text-xs text-gray-400">{maturityLevel} → {nextLevel}</p>
-              </div>
-            </div>
+            <h2 className="section-heading text-base font-bold mb-5" style={{ color: 'var(--brand-navy)' }}>
+              Recommended Action Plan
+            </h2>
             <div className="space-y-3">
-              {displayNextLevel.map((action, i) => {
-                const title = lang === 'es' ? action.titleEs : action.titleEn
-                const rawDesc = lang === 'es' ? (action.descriptionEs ?? action.descriptionEn ?? '') : (action.descriptionEn ?? '')
-                const whyMatch = rawDesc.match(/(?:WHY|POR QUÉ):\s*(.+?)(?:\s*\||\s*REQUIRES:|$)/i)
-                const reqMatch = rawDesc.match(/(?:REQUIRES|REQUIERE):\s*(.+?)$/i)
-                const why = whyMatch ? whyMatch[1].trim() : rawDesc
-                const requires = reqMatch ? reqMatch[1].trim() : ''
-                return (
-                  <div key={action.id} className="card p-5 flex gap-4">
-                    <div
-                      className="flex-shrink-0 w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold text-white"
-                      style={{ background: 'var(--brand-navy)' }}
-                    >
-                      {i + 1}
+              {actionPlan.map((action, i) => (
+                <div key={action.id} className="card p-5 flex gap-4">
+                  <div
+                    className="flex-shrink-0 w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold text-white"
+                    style={{ background: 'var(--brand-navy)' }}
+                  >
+                    {i + 1}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex flex-wrap items-center gap-2 mb-1">
+                      <h3 className="font-semibold text-sm" style={{ color: 'var(--brand-navy)' }}>
+                        {action.titleEn}
+                      </h3>
+                      <PriorityBadge priority={action.priority} />
+                      <HorizonBadge horizon={action.horizon} />
                     </div>
-                    <div className="flex-1 min-w-0">
-                      <div className="flex flex-wrap items-center gap-2 mb-1">
-                        <h3 className="font-semibold text-sm" style={{ color: 'var(--brand-navy)' }}>{title}</h3>
-                        <PriorityBadge priority={action.priority} />
-                        <HorizonBadge horizon={action.horizon} />
-                      </div>
-                      <p className="text-xs text-gray-400 mb-2">
-                        {t('results.phase')}: {phaseNames[action.phaseSlug] ?? action.phaseSlug}
-                      </p>
-                      {why && (
-                        <div className="mb-2">
-                          <span className="text-xs font-semibold text-gray-500 uppercase tracking-wide">{t('results.action.why')}: </span>
-                          <span className="text-sm text-gray-600">{why}</span>
-                        </div>
-                      )}
-                      {requires && (
-                        <div className="mt-1 p-2 rounded bg-blue-50">
-                          <span className="text-xs font-semibold text-blue-700 uppercase tracking-wide">{t('results.action.requires')}: </span>
-                          <span className="text-xs text-blue-600">{requires}</span>
-                        </div>
-                      )}
-                      <div className="flex gap-4 mt-2">
-                        <span className="text-xs text-gray-400">
-                          {t('results.effort')}: <span className="font-medium text-gray-600">{action.effort}</span>
-                        </span>
-                        <span className="text-xs text-gray-400">
-                          {t('results.impact')}: <span className="font-medium text-gray-600">{action.impact}</span>
-                        </span>
-                      </div>
+                    <p className="text-xs text-gray-400 mb-2">
+                      {phaseNames[action.phaseSlug] ?? action.phaseSlug}
+                    </p>
+                    {action.descriptionEn && (
+                      <p className="text-sm text-gray-600 leading-relaxed">{action.descriptionEn}</p>
+                    )}
+                    <div className="flex gap-4 mt-2">
+                      <span className="text-xs text-gray-400">
+                        Effort: <span className="font-medium text-gray-600">{action.effort}</span>
+                      </span>
+                      <span className="text-xs text-gray-400">
+                        Impact: <span className="font-medium text-gray-600">{action.impact}</span>
+                      </span>
                     </div>
                   </div>
-                )
-              })}
+                </div>
+              ))}
             </div>
           </div>
         )}
 
-
-
-        {/* Analysis */}
+        {/* AI Analysis */}
         <div>
-          <div className="flex items-center gap-3 mb-5">
-            <div className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0" style={{ background: 'var(--brand-navy)' }}>
-              <Zap size={16} className="text-white" />
-            </div>
+          <div className="flex items-center justify-between mb-5">
             <h2 className="section-heading text-base font-bold" style={{ color: 'var(--brand-navy)' }}>
-              Analysis
+              AI-Powered Deep Analysis
             </h2>
+            {!llmAnalysis && (
+              <button
+                onClick={handleGenerateAnalysis}
+                disabled={loadingAnalysis}
+                className="flex items-center gap-2 px-4 py-2 text-sm font-semibold text-white rounded-sm disabled:opacity-50"
+                style={{ background: 'var(--brand-cyan)' }}
+              >
+                {loadingAnalysis ? <Loader2 size={14} className="animate-spin" /> : <Zap size={14} />}
+                {loadingAnalysis ? 'Generating...' : 'Generate Analysis'}
+              </button>
+            )}
           </div>
 
           {analysisError && (
@@ -731,176 +522,44 @@ Return ONLY valid JSON, no markdown, no extra text.`
             </div>
           )}
 
-          {loadingAnalysis && !llmAnalysis && (
-            <div className="card p-8 text-center">
-              <Loader2 size={24} className="mx-auto mb-3 animate-spin" style={{ color: 'var(--brand-cyan)' }} />
-              <p className="text-sm text-gray-500">{t('results.ai.generating')}</p>
-            </div>
-          )}
-
-          {llmAnalysis && (
-            <LLMSection analysis={llmAnalysis} t={t} lang={lang} />
-          )}
-        </div>
-
-        {/* Anonymous Regional Results Banner */}
-        <div
-          className="rounded-2xl p-8 text-white no-print"
-          style={{ background: 'linear-gradient(135deg, var(--brand-navy) 0%, #0a4a8c 100%)' }}
-        >
-          <div className="flex flex-col md:flex-row items-start md:items-center gap-6">
-            <div
-              className="flex-shrink-0 w-14 h-14 rounded-2xl flex items-center justify-center"
-              style={{ background: 'rgba(255,255,255,0.15)' }}
-            >
-              <Users size={28} className="text-white" />
-            </div>
-            <div className="flex-1">
-              <div className="flex items-center gap-2 mb-2">
-                <span
-                  className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold"
-                  style={{ background: 'var(--brand-cyan)', color: '#fff' }}
-                >
-                  <Globe size={11} />
-                  {t('results.anon.badge')}
-                </span>
-              </div>
-              <h3 className="text-xl font-black mb-2 leading-snug">
-                {t('results.anon.title')}
-              </h3>
-              <p className="text-sm leading-relaxed" style={{ color: 'rgba(255,255,255,0.82)' }}>
-                {t('results.anon.desc')}
+          {llmAnalysis ? (
+            <LLMSection analysis={llmAnalysis} />
+          ) : (
+            <div className="card p-8 text-center border-dashed">
+              <Zap size={24} className="mx-auto mb-3" style={{ color: 'var(--brand-cyan)' }} />
+              <p className="text-sm text-gray-500 mb-1">
+                Generate a deep AI analysis of your results
+              </p>
+              <p className="text-xs text-gray-400">
+                Includes executive summary, phase-by-phase analysis, roadmap narrative and key insights.
               </p>
             </div>
-          </div>
+          )}
         </div>
 
-        {/* Contact Section */}
-        <div className="rounded-2xl overflow-hidden no-print contact-section" style={{ border: '1px solid #E5E7EB' }}>
-          {/* Header */}
-          <div
-            className="px-8 py-10 text-center"
-            style={{ background: '#F8FAFC' }}
-          >
-            <p className="text-xs font-bold uppercase tracking-widest mb-3" style={{ color: 'var(--brand-cyan)' }}>
-              — {t('results.contact.schedule')}
-            </p>
-            <h2 className="text-2xl font-black mb-3" style={{ color: 'var(--brand-navy)' }}>
-              {t('results.contact.title')}
-            </h2>
-            <p className="text-sm text-gray-500 max-w-xl mx-auto leading-relaxed">
-              {t('results.contact.desc')}
-            </p>
-          </div>
-
-          {/* Contact cards */}
-          <div className="grid grid-cols-1 md:grid-cols-2 divide-y md:divide-y-0 md:divide-x divide-gray-200" style={{ borderTop: '1px solid #E5E7EB' }}>
-            {/* Ignacio Fernández */}
-            <div className="p-8 flex flex-col items-center text-center gap-4">
-              <div
-                className="w-20 h-20 rounded-full flex items-center justify-center text-2xl font-black text-white flex-shrink-0"
-                style={{ background: 'var(--brand-navy)' }}
-              >
-                IF
-              </div>
-              <div>
-                <p className="font-bold text-base" style={{ color: 'var(--brand-navy)' }}>Ignacio Fernández</p>
-                <p className="text-xs text-gray-400 mt-0.5">{t('results.contact.role1')}</p>
-              </div>
-              <div className="flex flex-col gap-2 w-full">
-                <a
-                  href="mailto:ignacio.fernandez@upu.int"
-                  className="flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg text-sm font-semibold transition-all hover:opacity-90"
-                  style={{ background: 'var(--brand-navy)', color: '#fff' }}
-                >
-                  <Mail size={14} />
-                  ignacio.fernandez@upu.int
-                </a>
-                <a
-                  href="https://teams.microsoft.com/l/chat/0/0?users=ignacio.fernandez@upu.int"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg text-sm font-semibold border-2 transition-all hover:bg-gray-50"
-                  style={{ borderColor: 'var(--brand-navy)', color: 'var(--brand-navy)' }}
-                >
-                  <CalendarCheck size={14} />
-                  {t('results.contact.teams')}
-                </a>
-              </div>
-            </div>
-
-            {/* Houssem Gharbi */}
-            <div className="p-8 flex flex-col items-center text-center gap-4">
-              <div
-                className="w-20 h-20 rounded-full flex items-center justify-center text-2xl font-black text-white flex-shrink-0"
-                style={{ background: 'var(--brand-cyan)' }}
-              >
-                HG
-              </div>
-              <div>
-                <p className="font-bold text-base" style={{ color: 'var(--brand-navy)' }}>Houssem Gharbi</p>
-                <p className="text-xs text-gray-400 mt-0.5">{t('results.contact.role2')}</p>
-              </div>
-              <div className="flex flex-col gap-2 w-full">
-                <a
-                  href="mailto:gharbiho@upu.int"
-                  className="flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg text-sm font-semibold transition-all hover:opacity-90"
-                  style={{ background: 'var(--brand-cyan)', color: '#fff' }}
-                >
-                  <Mail size={14} />
-                  gharbiho@upu.int
-                </a>
-                <a
-                  href="https://teams.microsoft.com/l/chat/0/0?users=gharbiho@upu.int"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg text-sm font-semibold border-2 transition-all hover:bg-gray-50"
-                  style={{ borderColor: 'var(--brand-cyan)', color: 'var(--brand-cyan)' }}
-                >
-                  <CalendarCheck size={14} />
-                  {t('results.contact.teams')}
-                </a>
-              </div>
-            </div>
-          </div>
-
-          {/* Footer strip */}
-          <div
-            className="px-8 py-4 flex items-center justify-center gap-2 text-xs"
-            style={{ background: '#F8FAFC', borderTop: '1px solid #E5E7EB', color: '#6B7280' }}
-          >
-            <Globe size={12} />
-            UPU · ONE Solutions · Weltpoststrasse 4, 3015 Berne, Switzerland
-          </div>
-        </div>
-
-        {/* Review & Edit Answers — final section */}
-        <div className="card p-6 border-2 print:hidden" style={{ borderColor: '#E5E7EB' }}>
-          <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
-            <div className="flex items-start gap-4">
-              <div className="w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0" style={{ background: 'var(--brand-light)' }}>
-                <Edit3 size={18} style={{ color: 'var(--brand-navy)' }} />
-              </div>
-              <div>
-                <h3 className="font-bold text-sm mb-1" style={{ color: 'var(--brand-navy)' }}>
-                  {t('results.review.title')}
-                </h3>
-                <p className="text-xs text-gray-500 leading-relaxed max-w-lg">
-                  {t('results.review.desc')}
-                </p>
-              </div>
-            </div>
+        {/* CTA */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="card p-6 text-center">
+            <h3 className="font-bold mb-2" style={{ color: 'var(--brand-navy)' }}>Compare with Global Benchmark</h3>
+            <p className="text-sm text-gray-500 mb-4">See how your scores compare to other postal organizations worldwide.</p>
             <button
-              onClick={() => navigate('/assessment', { state: { token, editMode: true } })}
-              className="flex items-center gap-2 px-5 py-2.5 text-sm font-semibold rounded border-2 transition-all hover:bg-gray-50 flex-shrink-0"
-              style={{ borderColor: 'var(--brand-navy)', color: 'var(--brand-navy)' }}
+              onClick={() => navigate('/benchmark')}
+              className="btn-primary mx-auto"
             >
-              <Edit3 size={14} />
-              {t('results.review.btn')}
+              View Benchmark <ArrowRight size={14} />
+            </button>
+          </div>
+          <div className="card p-6 text-center">
+            <h3 className="font-bold mb-2" style={{ color: 'var(--brand-navy)' }}>Find Solutions & Providers</h3>
+            <p className="text-sm text-gray-500 mb-4">Discover tools and consultants that can help improve your weakest phases.</p>
+            <button
+              onClick={() => navigate('/market')}
+              className="btn-cyan mx-auto"
+            >
+              Explore Market <ArrowRight size={14} />
             </button>
           </div>
         </div>
-
       </main>
 
       <Footer />

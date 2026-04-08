@@ -47,7 +47,7 @@ export interface Question {
   help_es: string | null
   help_en: string | null
   context_es: string | null
-  question_type: 'scale' | 'yes_no' | 'multiple_choice' | 'single_choice' | 'barrier' | 'hidden'
+  question_type: 'scale' | 'yes_no' | 'multiple_choice' | 'single_choice' | 'barrier'
   weight: number
   options: BarrierOption[] | null
   options_json: OptionItem[] | null
@@ -101,8 +101,6 @@ export interface ActionItem {
   effort: 'low' | 'medium' | 'high'
   impact: 'low' | 'medium' | 'high'
   descriptionEn?: string
-  descriptionEs?: string
-  section?: 'next_level' | 'quality_total'
 }
 
 export interface LLMAnalysis {

@@ -1,118 +1,87 @@
 import { useState, useEffect } from 'react'
-import { useNavigate, useSearchParams, useLocation } from 'react-router-dom'
-import { ChevronLeft, ChevronRight, CheckCircle, Info, Loader2, AlertCircle, Save, Mail, BookmarkCheck } from 'lucide-react'
+import { useNavigate, useSearchParams } from 'react-router-dom'
+import { ChevronLeft, ChevronRight, CheckCircle, Info, Loader2, AlertCircle, Save, Mail, BookmarkCheck, X } from 'lucide-react'
 import Navbar from '../components/Navbar'
+import Footer from '../components/Footer'
 import { useAssessment } from '../hooks/useAssessment'
-import { useI18n, getLocalizedText } from '../lib/i18n'
+import { useI18n } from '../lib/i18n'
 import { supabase } from '../lib/supabase'
-import type { Question, Phase, OptionItem } from '../lib/supabase'
+import { getLocalizedText } from '../lib/i18n'
+import { notifySurveyInProcess, notifySurveyComplete } from '../lib/email'
 
-// ── Helpers ──────────────────────────────────────────────────────────────────
+// ── Components ────────────────────────────────────────────────────────────────
 
-function getOptionLabel(opt: OptionItem, lang: string): string {
-  if (lang === 'es') return opt.label_es || opt.label_en || String(opt.value)
-  if (lang === 'fr') return opt.label_fr || opt.label_en || opt.label_es || String(opt.value)
-  if (lang === 'ar') return opt.label_ar || opt.label_en || opt.label_es || String(opt.value)
-  if (lang === 'ru') return opt.label_ru || opt.label_en || opt.label_es || String(opt.value)
-  return opt.label_en || opt.label_es || String(opt.value)
+function BarrierQuestion({ question, value, onChange, lang }: any) {
+  const title = getLocalizedText(question, 'text', lang) || question.text_en
+  const options = question.options_json || [
+    { value: 1, label_en: 'Yes', label_es: 'Sí', label_fr: 'Oui' },
+    { value: 0, label_en: 'No', label_es: 'No', label_fr: 'Non' }
+  ]
+
+  return (
+    <div className="mb-10 animate-fade-in">
+      <div className="flex items-start gap-3 mb-4">
+        <div className="mt-1 p-1.5 rounded-lg bg-amber-50 text-amber-600">
+          <Info size={16} />
+        </div>
+        <h3 className="text-lg font-bold text-gray-800 leading-tight">{title}</h3>
+      </div>
+      <div className="grid grid-cols-2 gap-3 ml-11">
+        {options.map((opt: any) => (
+          <button
+            key={opt.value}
+            onClick={() => onChange(opt.value)}
+            className={`px-4 py-3 rounded-xl border-2 font-semibold transition-all text-sm ${
+              value === opt.value
+                ? 'border-amber-500 bg-amber-50 text-amber-700 shadow-sm'
+                : 'border-gray-100 bg-white text-gray-500 hover:border-gray-200'
+            }`}
+          >
+            {getLocalizedText(opt, 'label', lang) || opt.label_en}
+          </button>
+        ))}
+      </div>
+    </div>
+  )
 }
 
-function getOptionDesc(opt: OptionItem, lang: string): string {
-  if (lang === 'es') return opt.desc_es || opt.desc_en || ''
-  return opt.desc_en || opt.desc_es || ''
-}
+function MultipleChoiceQuestion({ question, value = [], onChange, lang }: any) {
+  const title = getLocalizedText(question, 'text', lang) || question.text_en
+  const options = question.options_json || []
 
-// ── Multiple Choice Question (checkboxes) ────────────────────────────────────
-
-function MultipleChoiceQuestion({ question, value, onChange, lang }: {
-  question: Question
-  value: string[] | undefined
-  onChange: (v: string[]) => void
-  lang: string
-}) {
-  const { t } = useI18n()
-  const [showHelp, setShowHelp] = useState(false)
-  const text = getLocalizedText(question as unknown as Record<string, unknown>, 'text', lang as 'en' | 'es' | 'fr') || question.text_en
-  const help = getLocalizedText(question as unknown as Record<string, unknown>, 'help', lang as 'en' | 'es' | 'fr') || question.help_en
-  const context = question.context_es
-  const options = question.options_json ?? []
-  const selected = value ?? []
-
-  const toggle = (val: string) => {
-    if (selected.includes(val)) {
-      onChange(selected.filter(v => v !== val))
+  const toggleOption = (optValue: string | number) => {
+    const current = Array.isArray(value) ? value : []
+    if (current.includes(String(optValue))) {
+      onChange(current.filter(v => v !== String(optValue)))
     } else {
-      onChange([...selected, val])
+      onChange([...current, String(optValue)])
     }
   }
 
   return (
-    <div className="mb-8 animate-fade-in-up">
-      <div className="flex items-start gap-3 mb-1">
-        <p className="text-base font-medium text-gray-800 flex-1 leading-relaxed">{text}</p>
-        {(help || context) && (
-          <button
-            onClick={() => setShowHelp(!showHelp)}
-            className="flex-shrink-0 p-1 rounded text-gray-400 hover:text-blue-600 transition-colors"
-            title={t('assessment.help')}
-          >
-            <Info size={16} />
-          </button>
-        )}
-      </div>
-      <p className="text-xs text-gray-400 mb-3 ml-0">{lang === 'es' ? 'Puede seleccionar varias opciones' : lang === 'fr' ? 'Vous pouvez sélectionner plusieurs options' : lang === 'ar' ? 'يمكنك اختيار عدة خيارات' : lang === 'ru' ? 'Можно выбрать несколько вариантов' : 'You may select multiple options'}</p>
-
-      {showHelp && (help || context) && (
-        <div className="mb-4 p-3 rounded-lg text-sm text-gray-600 leading-relaxed"
-          style={{ background: 'var(--brand-light)', borderLeft: '3px solid var(--brand-cyan)' }}>
-          {context && <p className="font-medium text-gray-700 mb-1">{context}</p>}
-          {help && <p>{help}</p>}
-        </div>
-      )}
-
-      <div className="space-y-2">
-        {options.map((opt) => {
-          const val = String(opt.value)
-          const label = getOptionLabel(opt, lang)
-          const desc = getOptionDesc(opt, lang)
-          const isSelected = selected.includes(val)
+    <div className="mb-10 animate-fade-in">
+      <h3 className="text-lg font-bold text-gray-800 mb-4 leading-tight">{title}</h3>
+      <div className="space-y-2 ml-2">
+        {options.map((opt: any) => {
+          const isSelected = Array.isArray(value) && value.includes(String(opt.value))
           return (
             <button
-              key={val}
-              onClick={() => toggle(val)}
-              className={`w-full text-left px-4 py-3 rounded-lg border-2 transition-all ${
+              key={opt.value}
+              onClick={() => toggleOption(opt.value)}
+              className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl border-2 transition-all text-left ${
                 isSelected
-                  ? 'border-blue-600 bg-blue-50'
-                  : 'border-gray-200 hover:border-blue-300 hover:bg-blue-50/30'
+                  ? 'border-blue-500 bg-blue-50 text-blue-700'
+                  : 'border-gray-50 bg-gray-50/50 text-gray-600 hover:border-gray-200'
               }`}
             >
-              <div className="flex items-start gap-3">
-                <div
-                  className={`flex-shrink-0 w-5 h-5 rounded border-2 flex items-center justify-center mt-0.5 transition-all ${
-                    isSelected ? 'border-blue-600 bg-blue-600' : 'border-gray-300'
-                  }`}
-                >
-                  {isSelected && (
-                    <svg className="w-3 h-3 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-                    </svg>
-                  )}
-                </div>
-                <div className="flex-1 min-w-0">
-                  <p className={`text-sm font-semibold ${
-                    isSelected ? 'text-blue-900' : 'text-gray-800'
-                  }`}>
-                    <span className="font-bold mr-1">{val}.</span>{label}
-                  </p>
-                  {desc && (
-                    <p className={`text-xs mt-0.5 leading-relaxed ${
-                      isSelected ? 'text-blue-700' : 'text-gray-500'
-                    }`}>
-                      {desc}
-                    </p>
-                  )}
-                </div>
+              <div className={`w-5 h-5 rounded border-2 flex items-center justify-center transition-colors ${
+                isSelected ? 'bg-blue-500 border-blue-500' : 'bg-white border-gray-300'
+              }`}>
+                {isSelected && <CheckCircle size={12} className="text-white" />}
               </div>
+              <span className="text-sm font-medium">
+                {getLocalizedText(opt, 'label', lang) || opt.label_en}
+              </span>
             </button>
           )
         })}
@@ -121,83 +90,34 @@ function MultipleChoiceQuestion({ question, value, onChange, lang }: {
   )
 }
 
-// ── Single Choice Question (radio) ────────────────────────────────────────────
-
-function SingleChoiceQuestion({ question, value, onChange, lang }: {
-  question: Question
-  value: number | undefined
-  onChange: (v: number) => void
-  lang: string
-}) {
-  const { t } = useI18n()
-  const [showHelp, setShowHelp] = useState(false)
-  const text = getLocalizedText(question as unknown as Record<string, unknown>, 'text', lang as 'en' | 'es' | 'fr') || question.text_en
-  const help = getLocalizedText(question as unknown as Record<string, unknown>, 'help', lang as 'en' | 'es' | 'fr') || question.help_en
-  const context = question.context_es
-  const options = question.options_json ?? []
+function SingleChoiceQuestion({ question, value, onChange, lang }: any) {
+  const title = getLocalizedText(question, 'text', lang) || question.text_en
+  const options = question.options_json || []
 
   return (
-    <div className="mb-8 animate-fade-in-up">
-      <div className="flex items-start gap-3 mb-3">
-        <p className="text-base font-medium text-gray-800 flex-1 leading-relaxed">{text}</p>
-        {(help || context) && (
-          <button
-            onClick={() => setShowHelp(!showHelp)}
-            className="flex-shrink-0 p-1 rounded text-gray-400 hover:text-blue-600 transition-colors"
-            title={t('assessment.help')}
-          >
-            <Info size={16} />
-          </button>
-        )}
-      </div>
-
-      {showHelp && (help || context) && (
-        <div className="mb-4 p-3 rounded-lg text-sm text-gray-600 leading-relaxed"
-          style={{ background: 'var(--brand-light)', borderLeft: '3px solid var(--brand-cyan)' }}>
-          {context && <p className="font-medium text-gray-700 mb-1">{context}</p>}
-          {help && <p>{help}</p>}
-        </div>
-      )}
-
-      <div className="space-y-2">
-        {options.map((opt) => {
-          const numVal = typeof opt.value === 'number' ? opt.value : parseInt(String(opt.value))
-          const label = getOptionLabel(opt, lang)
-          const desc = getOptionDesc(opt, lang)
-          const isSelected = value === numVal
+    <div className="mb-10 animate-fade-in">
+      <h3 className="text-lg font-bold text-gray-800 mb-4 leading-tight">{title}</h3>
+      <div className="space-y-2 ml-2">
+        {options.map((opt: any) => {
+          const isSelected = value === opt.value
           return (
             <button
-              key={numVal}
-              onClick={() => onChange(numVal)}
-              className={`w-full text-left px-4 py-3 rounded-lg border-2 transition-all ${
+              key={opt.value}
+              onClick={() => onChange(opt.value)}
+              className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl border-2 transition-all text-left ${
                 isSelected
-                  ? 'border-blue-600 bg-blue-50'
-                  : 'border-gray-200 hover:border-blue-300 hover:bg-blue-50/30'
+                  ? 'border-blue-500 bg-blue-50 text-blue-700'
+                  : 'border-gray-50 bg-gray-50/50 text-gray-600 hover:border-gray-200'
               }`}
             >
-              <div className="flex items-start gap-3">
-                <div
-                  className={`flex-shrink-0 w-5 h-5 rounded-full border-2 flex items-center justify-center mt-0.5 transition-all ${
-                    isSelected ? 'border-blue-600' : 'border-gray-300'
-                  }`}
-                >
-                  {isSelected && <div className="w-2.5 h-2.5 rounded-full bg-blue-600" />}
-                </div>
-                <div className="flex-1 min-w-0">
-                  <p className={`text-sm font-semibold ${
-                    isSelected ? 'text-blue-900' : 'text-gray-800'
-                  }`}>
-                    {label}
-                  </p>
-                  {desc && (
-                    <p className={`text-xs mt-0.5 leading-relaxed ${
-                      isSelected ? 'text-blue-700' : 'text-gray-500'
-                    }`}>
-                      {desc}
-                    </p>
-                  )}
-                </div>
+              <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center transition-colors ${
+                isSelected ? 'bg-blue-500 border-blue-500' : 'bg-white border-gray-300'
+              }`}>
+                {isSelected && <div className="w-2 h-2 rounded-full bg-white" />}
               </div>
+              <span className="text-sm font-medium">
+                {getLocalizedText(opt, 'label', lang) || opt.label_en}
+              </span>
             </button>
           )
         })}
@@ -206,256 +126,64 @@ function SingleChoiceQuestion({ question, value, onChange, lang }: {
   )
 }
 
-// ── Scale Question ────────────────────────────────────────────────────────────
-
-function ScaleQuestion({ question, value, onChange, lang }: {
-  question: Question
-  value: number | undefined
-  onChange: (v: number) => void
-  lang: string
-}) {
-  const { t } = useI18n()
-  const [showHelp, setShowHelp] = useState(false)
-  const text = getLocalizedText(question as unknown as Record<string, unknown>, 'text', lang as 'en' | 'es' | 'fr') || question.text_en
-  const help = getLocalizedText(question as unknown as Record<string, unknown>, 'help', lang as 'en' | 'es' | 'fr') || question.help_en
-  const context = question.context_es
-
-  // Use options_json if available, otherwise fall back to generic scale labels
-  const options = question.options_json
-
-  const SCALE_LABELS = [
-    t('assessment.scale.1'),
-    t('assessment.scale.2'),
-    t('assessment.scale.3'),
-    t('assessment.scale.4'),
-  ]
+function ScaleQuestion({ question, value, onChange, lang }: any) {
+  const title = getLocalizedText(question, 'text', lang) || question.text_en
+  const description = getLocalizedText(question, 'description', lang) || question.description_en
 
   return (
-    <div className="mb-8 animate-fade-in-up">
-      <div className="flex items-start gap-3 mb-3">
-        <p className="text-base font-medium text-gray-800 flex-1 leading-relaxed">{text}</p>
-        {(help || context) && (
-          <button
-            onClick={() => setShowHelp(!showHelp)}
-            className="flex-shrink-0 p-1 rounded text-gray-400 hover:text-blue-600 transition-colors"
-            title={t('assessment.help')}
-          >
-            <Info size={16} />
-          </button>
-        )}
+    <div className="mb-12 animate-fade-in">
+      <div className="mb-4">
+        <h3 className="text-lg font-bold text-gray-800 leading-tight mb-1">{title}</h3>
+        {description && <p className="text-sm text-gray-400 leading-relaxed">{description}</p>}
       </div>
-
-      {showHelp && (help || context) && (
-        <div className="mb-4 p-3 rounded-lg text-sm text-gray-600 leading-relaxed"
-          style={{ background: 'var(--brand-light)', borderLeft: '3px solid var(--brand-cyan)' }}>
-          {context && <p className="font-medium text-gray-700 mb-1">{context}</p>}
-          {help && <p>{help}</p>}
-        </div>
-      )}
-
-      {options && options.length > 0 ? (
-        // Rich options from document
-        <div className="space-y-2">
-          {options.map((opt) => {
-            const numVal = typeof opt.value === 'number' ? opt.value : parseInt(String(opt.value))
-            const label = getOptionLabel(opt, lang)
-            const desc = getOptionDesc(opt, lang)
-            const isSelected = value === numVal
-            return (
-              <button
-                key={opt.value}
-                onClick={() => onChange(numVal)}
-                className={`w-full text-left px-4 py-3 rounded-lg border-2 transition-all ${
-                  isSelected
-                    ? 'border-blue-600 bg-blue-50'
-                    : 'border-gray-200 hover:border-blue-300 hover:bg-blue-50/30'
-                }`}
-              >
-                <div className="flex items-start gap-3">
-                  <div
-                    className={`flex-shrink-0 w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold mt-0.5 ${
-                      isSelected ? 'text-white' : 'text-gray-500'
-                    }`}
-                    style={isSelected ? { background: 'var(--brand-navy)' } : { background: '#F3F4F6' }}
-                  >
-                    {numVal}
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <p className={`text-sm font-semibold ${isSelected ? 'text-blue-900' : 'text-gray-800'}`}>
-                      {label}
-                    </p>
-                    {desc && (
-                      <p className={`text-xs mt-0.5 leading-relaxed ${isSelected ? 'text-blue-700' : 'text-gray-500'}`}>
-                        {desc}
-                      </p>
-                    )}
-                  </div>
-                </div>
-              </button>
-            )
-          })}
-        </div>
-      ) : (
-        // Fallback: generic 1-4 scale
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-          {[1, 2, 3, 4].map(v => (
+      <div className="flex flex-col sm:flex-row items-center gap-2">
+        <div className="flex-1 grid grid-cols-5 gap-1.5 w-full">
+          {[1, 2, 3, 4, 5].map(num => (
             <button
-              key={v}
-              onClick={() => onChange(v)}
-              className={`flex flex-col items-center gap-2 p-3 rounded-lg border-2 transition-all text-center ${
-                value === v
-                  ? 'border-blue-600 bg-blue-50'
-                  : 'border-gray-200 hover:border-blue-300 hover:bg-blue-50/30'
+              key={num}
+              onClick={() => onChange(num)}
+              className={`h-12 rounded-xl border-2 font-bold transition-all ${
+                value === num
+                  ? 'border-blue-600 bg-blue-600 text-white shadow-lg shadow-blue-200 scale-105'
+                  : 'border-gray-100 bg-white text-gray-400 hover:border-gray-200 hover:text-gray-600'
               }`}
             >
-              <div
-                className={`w-9 h-9 rounded-full flex items-center justify-center text-sm font-bold transition-all ${
-                  value === v ? 'text-white' : 'text-gray-500'
-                }`}
-                style={value === v ? { background: 'var(--brand-navy)' } : { background: '#F3F4F6' }}
-              >
-                {v}
-              </div>
-              <span className="text-xs text-gray-500 leading-tight">{SCALE_LABELS[v - 1]}</span>
+              {num}
             </button>
           ))}
         </div>
-      )}
-    </div>
-  )
-}
-
-// ── Barrier Question ──────────────────────────────────────────────────────────
-
-function BarrierQuestion({ question, value, onChange, lang }: {
-  question: Question
-  value: number | undefined
-  onChange: (v: number) => void
-  lang: string
-}) {
-  const [showHelp, setShowHelp] = useState(false)
-  const text = getLocalizedText(question as unknown as Record<string, unknown>, 'text', lang as 'en' | 'es' | 'fr') || question.text_en
-  const context = question.context_es
-
-  // Prefer options_json over legacy options
-  const optionsJson = question.options_json
-  const legacyOptions = question.options ?? []
-
-  return (
-    <div className="mb-8 animate-fade-in-up">
-      <div className="flex items-start gap-3 mb-3">
-        <p className="text-base font-medium text-gray-800 flex-1 leading-relaxed">{text}</p>
-        {context && (
-          <button
-            onClick={() => setShowHelp(!showHelp)}
-            className="flex-shrink-0 p-1 rounded text-gray-400 hover:text-blue-600 transition-colors"
-          >
-            <Info size={16} />
-          </button>
-        )}
-      </div>
-
-      {showHelp && context && (
-        <div className="mb-4 p-3 rounded-lg text-sm text-gray-600 leading-relaxed"
-          style={{ background: 'var(--brand-light)', borderLeft: '3px solid var(--brand-cyan)' }}>
-          {context}
+        <div className="flex sm:flex-col justify-between w-full sm:w-auto px-1 sm:h-12 text-[10px] font-bold uppercase tracking-wider text-gray-300">
+          <span>{lang === 'es' ? 'Bajo' : lang === 'fr' ? 'Faible' : 'Low'}</span>
+          <span className="sm:text-right">{lang === 'es' ? 'Alto' : lang === 'fr' ? 'Élevé' : 'High'}</span>
         </div>
-      )}
-
-      <div className="space-y-2">
-        {optionsJson && optionsJson.length > 0 ? (
-          optionsJson.map((opt, i) => {
-            const label = getOptionLabel(opt, lang)
-            const desc = getOptionDesc(opt, lang)
-            const isSelected = value === i + 1
-            return (
-              <button
-                key={opt.value}
-                onClick={() => onChange(i + 1)}
-                className={`w-full text-left px-4 py-3 rounded-lg border-2 transition-all ${
-                  isSelected
-                    ? 'border-blue-600 bg-blue-50'
-                    : 'border-gray-200 text-gray-700 hover:border-blue-300 hover:bg-blue-50/30'
-                }`}
-              >
-                <div className="flex items-start gap-3">
-                  <div
-                    className={`flex-shrink-0 w-6 h-6 rounded flex items-center justify-center text-xs font-bold mt-0.5 ${
-                      isSelected ? 'text-white' : 'text-gray-500'
-                    }`}
-                    style={isSelected ? { background: 'var(--brand-navy)' } : { background: '#F3F4F6' }}
-                  >
-                    {String(opt.value)}
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <p className={`text-sm font-semibold ${isSelected ? 'text-blue-900' : 'text-gray-800'}`}>
-                      {label}
-                    </p>
-                    {desc && (
-                      <p className={`text-xs mt-0.5 leading-relaxed ${isSelected ? 'text-blue-700' : 'text-gray-500'}`}>
-                        {desc}
-                      </p>
-                    )}
-                  </div>
-                </div>
-              </button>
-            )
-          })
-        ) : (
-          legacyOptions.map((opt, i) => {
-            const optLabel = lang === 'es' ? (opt.labelEs ?? opt.labelEn)
-              : lang === 'fr' ? (opt.labelFr ?? opt.labelEn)
-              : opt.labelEn
-            return (
-              <button
-                key={opt.value}
-                onClick={() => onChange(i + 1)}
-                className={`w-full text-left px-4 py-3 rounded-lg border-2 transition-all text-sm ${
-                  value === i + 1
-                    ? 'border-blue-600 bg-blue-50 font-medium text-blue-900'
-                    : 'border-gray-200 text-gray-700 hover:border-blue-300 hover:bg-blue-50/30'
-                }`}
-              >
-                {optLabel}
-              </button>
-            )
-          })
-        )}
       </div>
     </div>
   )
 }
 
-// ── Phase Tab ─────────────────────────────────────────────────────────────────
-
-function PhaseTab({ phase, isActive, isCompleted, completionRate, onClick, lang }: {
-  phase: Phase
-  isActive: boolean
-  isCompleted: boolean
-  completionRate: number
-  onClick: () => void
-  lang: string
-}) {
-  const title = getLocalizedText(phase as unknown as Record<string, unknown>, 'title', lang as 'en' | 'es' | 'fr') || phase.title_en
+function PhaseTab({ phase, isActive, isCompleted, completionRate, onClick, lang }: any) {
+  const title = getLocalizedText(phase, 'title', lang) || phase.title_en
   return (
     <button
       onClick={onClick}
-      className={`phase-tab flex-shrink-0 ${isActive ? 'active' : ''} ${isCompleted ? 'completed' : ''}`}
+      className={`flex-shrink-0 px-5 py-3 border-b-2 transition-all flex items-center gap-2 ${
+        isActive
+          ? 'border-blue-600 text-blue-600 bg-blue-50/30'
+          : 'border-transparent text-gray-400 hover:text-gray-600 hover:bg-gray-50'
+      }`}
     >
-      <div className="flex items-center gap-2">
-        {isCompleted && <CheckCircle size={13} className="text-emerald-500" />}
-        <span>{lang === 'es' ? `Fase ${phase.order_index}` : lang === 'fr' ? `Phase ${phase.order_index}` : `Phase ${phase.order_index}`}</span>
-        {completionRate > 0 && completionRate < 100 && (
-          <span className="text-xs bg-amber-100 text-amber-700 px-1.5 py-0.5 rounded-full">
-            {completionRate}%
-          </span>
-        )}
-      </div>
+      <span className={`text-[10px] font-bold w-5 h-5 rounded-full flex items-center justify-center ${
+        isActive ? 'bg-blue-600 text-white' : isCompleted ? 'bg-green-500 text-white' : 'bg-gray-100 text-gray-400'
+      }`}>
+        {isCompleted ? '✓' : phase.order_index}
+      </span>
+      <span className="text-xs font-bold whitespace-nowrap">{title}</span>
+      {completionRate > 0 && completionRate < 100 && (
+        <div className="w-1.5 h-1.5 rounded-full bg-blue-400 animate-pulse" />
+      )}
     </button>
   )
 }
-
-// ── Profile Form ──────────────────────────────────────────────────────────────
 
 interface ProfileForm {
   name: string
@@ -469,7 +197,6 @@ interface ProfileForm {
 
 export default function Assessment() {
   const navigate = useNavigate()
-  const location = useLocation()
   const [searchParams] = useSearchParams()
   const { t, lang } = useI18n()
   const {
@@ -477,13 +204,16 @@ export default function Assessment() {
     answers, currentPhaseIndex,
     saveAnswer, goToPhase, completeAssessment,
     restoreFromToken, questionsForPhase, phaseCompletionRate,
-    token,
+    token, updateSessionEmail
   } = useAssessment()
 
   const [saving, setSaving] = useState(false)
   const [completing, setCompleting] = useState(false)
   const [showProfileModal, setShowProfileModal] = useState(false)
   const [showSaveModal, setShowSaveModal] = useState(false)
+  const [saveEmailInput, setSaveEmailInput] = useState('')
+  const [saveEmailSent, setSaveEmailSent] = useState(false)
+  
   const [profile, setProfile] = useState<ProfileForm>({
     name: '', organization: '', country: '', entityType: 'regulator', email: ''
   })
@@ -492,20 +222,16 @@ export default function Assessment() {
   const [restoreError, setRestoreError] = useState('')
   const [restoreMode, setRestoreMode] = useState<'token' | 'email'>('token')
 
-  // editMode: came from Results page to review/edit answers
-  const editMode = location.state?.editMode === true
-  const editToken = location.state?.token as string | undefined
-
-  // Restore from URL token or editMode token
+  // Restore from URL token
   useEffect(() => {
-    const urlToken = searchParams.get('token') ?? editToken
+    const urlToken = searchParams.get('token')
     if (urlToken) {
       restoreFromToken(urlToken)
     }
-  }, [searchParams, restoreFromToken, editToken])
+  }, [searchParams, restoreFromToken])
 
   const currentPhase = phases[currentPhaseIndex]
-  const currentQuestions = currentPhase ? questionsForPhase(currentPhase.id).filter(q => q.question_type !== 'hidden') : []
+  const currentQuestions = currentPhase ? questionsForPhase(currentPhase.id) : []
   const isLastPhase = currentPhaseIndex === phases.length - 1
 
   const handleAnswer = async (questionId: number, value: number | string[]) => {
@@ -532,6 +258,21 @@ export default function Assessment() {
     setShowSaveModal(true)
   }
 
+  const handleConfirmSaveEmail = async () => {
+    if (!saveEmailInput.trim()) return
+    setSaving(true)
+    try {
+      await updateSessionEmail(saveEmailInput)
+      // Notificación silenciosa solicitada
+      await notifySurveyInProcess(saveEmailInput)
+      setSaveEmailSent(true)
+    } catch (e) {
+      console.error(e)
+    } finally {
+      setSaving(false)
+    }
+  }
+
   const handleComplete = async () => {
     if (!profile.name || !profile.organization || !profile.country) return
     setCompleting(true)
@@ -543,8 +284,12 @@ export default function Assessment() {
         entityType: profile.entityType,
         email: profile.email || undefined,
       })
-      // In editMode, navigate back to results with forceRegenerate flag
-      navigate('/results', { state: { scores, gaps, actionPlan, token, forceRegenerate: editMode } })
+      
+      // Notificación de finalización con reporte resumido
+      const summary = `Scores: ${JSON.stringify(scores.byPhase)}\nTotal Score: ${scores.global}`;
+      await notifySurveyComplete(profile, scores, summary);
+      
+      navigate('/results', { state: { scores, gaps, actionPlan, token } })
     } catch (e) {
       console.error(e)
     } finally {
@@ -608,8 +353,8 @@ export default function Assessment() {
 
   if (!currentPhase) return null
 
-  const totalScoredQuestions = questions.filter(q => q.question_type !== 'barrier' && q.question_type !== 'hidden' && phases.find(p => p.id === q.phase_id && !p.scoring_excluded)).length
-  const answeredScored = questions.filter(q => q.question_type !== 'barrier' && q.question_type !== 'hidden' && answers[String(q.id)] !== undefined && phases.find(p => p.id === q.phase_id && !p.scoring_excluded)).length
+  const totalScoredQuestions = questions.filter(q => q.question_type !== 'barrier' && phases.find(p => p.id === q.phase_id && !p.scoring_excluded)).length
+  const answeredScored = questions.filter(q => q.question_type !== 'barrier' && answers[String(q.id)] !== undefined && phases.find(p => p.id === q.phase_id && !p.scoring_excluded)).length
   const overallProgress = totalScoredQuestions > 0 ? Math.round((answeredScored / totalScoredQuestions) * 100) : 0
 
   const phaseTitle = getLocalizedText(currentPhase as unknown as Record<string, unknown>, 'title', lang as 'en' | 'es' | 'fr') || currentPhase.title_en
@@ -707,7 +452,7 @@ export default function Assessment() {
                   key={q.id}
                   question={q}
                   value={answers[String(q.id)] as number | undefined}
-                  onChange={v => handleAnswer(q.id, v)}
+                  onChange={(v: any) => handleAnswer(q.id, v)}
                   lang={lang}
                 />
               )
@@ -718,7 +463,7 @@ export default function Assessment() {
                   key={q.id}
                   question={q}
                   value={answers[String(q.id)] as string[] | undefined}
-                  onChange={v => handleAnswer(q.id, v)}
+                  onChange={(v: any) => handleAnswer(q.id, v)}
                   lang={lang}
                 />
               )
@@ -729,7 +474,7 @@ export default function Assessment() {
                   key={q.id}
                   question={q}
                   value={answers[String(q.id)] as number | undefined}
-                  onChange={v => handleAnswer(q.id, v)}
+                  onChange={(v: any) => handleAnswer(q.id, v)}
                   lang={lang}
                 />
               )
@@ -739,7 +484,7 @@ export default function Assessment() {
                 key={q.id}
                 question={q}
                 value={answers[String(q.id)] as number | undefined}
-                onChange={v => handleAnswer(q.id, v)}
+                onChange={(v: any) => handleAnswer(q.id, v)}
                 lang={lang}
               />
             )
@@ -815,42 +560,44 @@ export default function Assessment() {
               </button>
             </div>
 
-            {restoreMode === 'token' ? (
-              <div className="flex gap-2">
-                <input
-                  type="text"
-                  value={tokenInput}
-                  onChange={e => setTokenInput(e.target.value)}
-                  placeholder={t('assessment.resume.token.placeholder')}
-                  className="flex-1 text-xs border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:border-blue-400"
-                />
-                <button
-                  onClick={handleRestoreToken}
-                  className="px-4 py-2 text-xs font-semibold text-white rounded-lg"
-                  style={{ background: 'var(--brand-navy)' }}
-                >
-                  {t('assessment.resume.btn')}
-                </button>
-              </div>
-            ) : (
-              <div className="flex gap-2">
-                <input
-                  type="email"
-                  value={emailInput}
-                  onChange={e => setEmailInput(e.target.value)}
-                  placeholder={t('assessment.resume.email.placeholder')}
-                  className="flex-1 text-xs border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:border-blue-400"
-                />
-                <button
-                  onClick={handleRestoreEmail}
-                  className="px-4 py-2 text-xs font-semibold text-white rounded-lg"
-                  style={{ background: 'var(--brand-navy)' }}
-                >
-                  {t('assessment.resume.btn')}
-                </button>
-              </div>
-            )}
-            {restoreError && <p className="text-xs text-red-500 mt-2">{restoreError}</p>}
+            <div className="flex gap-2">
+              {restoreMode === 'token' ? (
+                <>
+                  <input
+                    type="text"
+                    value={tokenInput}
+                    onChange={e => setTokenInput(e.target.value)}
+                    placeholder={t('assessment.resume.token.placeholder')}
+                    className="flex-1 border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-blue-400"
+                  />
+                  <button
+                    onClick={handleRestoreToken}
+                    className="px-4 py-2 text-sm font-semibold text-white rounded-lg transition-all hover:opacity-90"
+                    style={{ background: 'var(--brand-navy)' }}
+                  >
+                    {t('assessment.resume.button')}
+                  </button>
+                </>
+              ) : (
+                <>
+                  <input
+                    type="email"
+                    value={emailInput}
+                    onChange={e => setEmailInput(e.target.value)}
+                    placeholder={t('assessment.resume.email.placeholder')}
+                    className="flex-1 border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-blue-400"
+                  />
+                  <button
+                    onClick={handleRestoreEmail}
+                    className="px-4 py-2 text-sm font-semibold text-white rounded-lg transition-all hover:opacity-90"
+                    style={{ background: 'var(--brand-navy)' }}
+                  >
+                    {t('assessment.resume.button')}
+                  </button>
+                </>
+              )}
+            </div>
+            {restoreError && <p className="mt-2 text-[10px] text-red-500 font-medium">{restoreError}</p>}
           </div>
         )}
 
@@ -870,7 +617,14 @@ export default function Assessment() {
       {/* ── Save & Continue Later Modal ─────────────────────────────────────── */}
       {showSaveModal && (
         <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4 backdrop-blur-sm">
-          <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full p-6 animate-fade-in">
+          <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full p-6 animate-fade-in relative">
+            <button 
+              onClick={() => setShowSaveModal(false)}
+              className="absolute top-4 right-4 text-gray-400 hover:text-gray-600"
+            >
+              <X size={20} />
+            </button>
+
             <div
               className="w-10 h-10 rounded-xl flex items-center justify-center mb-4"
               style={{ background: 'var(--brand-light)' }}
@@ -878,38 +632,43 @@ export default function Assessment() {
               <BookmarkCheck size={20} style={{ color: 'var(--brand-navy)' }} />
             </div>
             <h3 className="text-lg font-bold mb-1" style={{ color: 'var(--brand-navy)' }}>
-              {lang === 'es' ? 'Tu progreso está guardado' :
-               lang === 'fr' ? 'Votre progression est sauvegardée' :
-               lang === 'ar' ? 'تم حفظ تقدمك' :
-               lang === 'ru' ? 'Ваш прогресс сохранён' :
-               'Your progress is saved'}
+              {lang === 'es' ? 'Guardar progreso' : 'Save progress'}
             </h3>
             <p className="text-sm text-gray-500 mb-5">
-              {lang === 'es' ? 'Usa este token o tu email para retomar la evaluación en cualquier momento.' :
-               lang === 'fr' ? 'Utilisez ce token ou votre email pour reprendre l\'évaluation à tout moment.' :
-               lang === 'ar' ? 'استخدم هذا الرمز أو بريدك الإلكتروني لاستئناف التقييم في أي وقت.' :
-               lang === 'ru' ? 'Используйте этот токен или email, чтобы возобновить оценку в любое время.' :
-               'Use this token or your email to resume the assessment at any time.'}
+              {lang === 'es' ? 'Introduce tu email para poder retomar la evaluación más tarde desde cualquier dispositivo.' :
+               'Enter your email to resume the assessment later from any device.'}
             </p>
 
-            {token ? (
-              <div className="p-4 rounded-xl bg-blue-50 border border-blue-100 mb-5">
-                <p className="text-xs font-semibold text-blue-700 mb-2">
-                  {lang === 'es' ? 'Tu token de acceso:' : 'Your access token:'}
-                </p>
-                <code className="block font-mono text-sm bg-white border border-blue-200 rounded-lg px-3 py-2 text-blue-900 break-all">
-                  {token}
-                </code>
-                <p className="text-xs text-blue-600 mt-2">
-                  {lang === 'es' ? 'Guarda este código. También puedes acceder con el email que registres al finalizar.' :
-                   'Save this code. You can also access with the email you register at the end.'}
-                </p>
+            {!saveEmailSent ? (
+              <div className="space-y-4 mb-6">
+                <div>
+                  <label className="block text-xs font-semibold text-gray-700 mb-1">Email</label>
+                  <input
+                    type="email"
+                    value={saveEmailInput}
+                    onChange={e => setSaveEmailInput(e.target.value)}
+                    className="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:border-blue-400"
+                    placeholder="you@organization.org"
+                  />
+                </div>
+                <button
+                  onClick={handleConfirmSaveEmail}
+                  disabled={!saveEmailInput.trim() || saving}
+                  className="w-full flex items-center justify-center gap-2 px-4 py-2.5 text-sm font-semibold text-white rounded-xl transition-all hover:opacity-90 disabled:opacity-50"
+                  style={{ background: 'var(--brand-navy)' }}
+                >
+                  {saving ? <Loader2 size={14} className="animate-spin" /> : <Save size={14} />}
+                  {lang === 'es' ? 'Guardar y recibir enlace' : 'Save & get link'}
+                </button>
               </div>
             ) : (
-              <div className="p-4 rounded-xl bg-amber-50 border border-amber-100 mb-5">
-                <p className="text-xs text-amber-700">
-                  {lang === 'es' ? 'Responde al menos una pregunta para generar tu token de acceso.' :
-                   'Answer at least one question to generate your access token.'}
+              <div className="p-4 rounded-xl bg-green-50 border border-green-100 mb-6 text-center">
+                <CheckCircle size={24} className="text-green-500 mx-auto mb-2" />
+                <p className="text-sm text-green-800 font-medium mb-1">
+                  {lang === 'es' ? '¡Progreso guardado!' : 'Progress saved!'}
+                </p>
+                <p className="text-xs text-green-600">
+                  {lang === 'es' ? 'Podrás retomar usando tu email.' : 'You can resume using your email.'}
                 </p>
               </div>
             )}
@@ -919,22 +678,14 @@ export default function Assessment() {
                 onClick={() => setShowSaveModal(false)}
                 className="flex-1 px-4 py-2.5 text-sm font-medium border border-gray-200 rounded-xl text-gray-600 hover:bg-gray-50 transition-colors"
               >
-                {lang === 'es' ? 'Continuar ahora' :
-                 lang === 'fr' ? 'Continuer maintenant' :
-                 lang === 'ar' ? 'متابعة الآن' :
-                 lang === 'ru' ? 'Продолжить сейчас' :
-                 'Continue now'}
+                {lang === 'es' ? 'Volver a la encuesta' : 'Back to survey'}
               </button>
               <button
                 onClick={() => navigate('/')}
                 className="flex-1 px-4 py-2.5 text-sm font-semibold text-white rounded-xl transition-all hover:opacity-90"
                 style={{ background: 'var(--brand-navy)' }}
               >
-                {lang === 'es' ? 'Salir al inicio' :
-                 lang === 'fr' ? 'Quitter' :
-                 lang === 'ar' ? 'الخروج' :
-                 lang === 'ru' ? 'Выйти' :
-                 'Exit to home'}
+                {lang === 'es' ? 'Salir al inicio' : 'Exit to home'}
               </button>
             </div>
           </div>
@@ -944,7 +695,14 @@ export default function Assessment() {
       {/* ── Profile / Complete Modal ─────────────────────────────────────────── */}
       {showProfileModal && (
         <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4 backdrop-blur-sm">
-          <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full p-6 animate-fade-in">
+          <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full p-6 animate-fade-in relative">
+            <button 
+              onClick={() => setShowProfileModal(false)}
+              className="absolute top-4 right-4 text-gray-400 hover:text-gray-600"
+            >
+              <X size={20} />
+            </button>
+
             <div
               className="w-10 h-10 rounded-xl flex items-center justify-center mb-4"
               style={{ background: 'var(--brand-light)' }}
