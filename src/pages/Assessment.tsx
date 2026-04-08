@@ -272,7 +272,7 @@ function PhaseTab({ phase, isActive, isCompleted, completionRate, onClick, lang 
       }`}>
         {isCompleted ? '✓' : phase.order_index}
       </span>
-      <span className="text-xs font-bold whitespace-nowrap">{title}</span>
+      <span className="text-xs font-bold whitespace-nowrap px-1">{title}</span>
       {completionRate > 0 && completionRate < 100 && (
         <div className="w-1.5 h-1.5 rounded-full bg-blue-400 animate-pulse" />
       )}
@@ -458,7 +458,7 @@ export default function Assessment() {
   const saveLabel = lang === 'es' ? 'Guardar y continuar después' :
     lang === 'fr' ? 'Sauvegarder et continuer plus tard' :
     lang === 'ar' ? 'حفظ والمتابعة لاحقاً' :
-    lang === 'ru' ? 'Сохранить и продолжить позже' :
+    lang === 'ru' ? 'Сохранить y продолжить позже' :
     'Save & continue later'
 
   return (
@@ -497,7 +497,7 @@ export default function Assessment() {
 
         {/* Phase tabs */}
         <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex overflow-x-auto gap-0 -mb-px scrollbar-hide">
+          <div className="flex overflow-x-auto gap-0 -mb-px scrollbar-hide scroll-smooth no-scrollbar" style={{ WebkitOverflowScrolling: 'touch' }}>
             {phases.map((phase, i) => (
               <PhaseTab
                 key={phase.id}
@@ -748,7 +748,6 @@ export default function Assessment() {
                 </div>
                 <button
                   onClick={handleConfirmSaveEmail}
-                  disabled={!saveEmailInput.trim() || saving}
                   className="w-full flex items-center justify-center gap-2 px-4 py-2.5 text-sm font-semibold text-white rounded-xl transition-all hover:opacity-90 disabled:opacity-50"
                   style={{ background: 'var(--brand-navy)' }}
                 >
