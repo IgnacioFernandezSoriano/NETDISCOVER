@@ -350,7 +350,14 @@ const COPY = {
 export default function Home() {
   const navigate = useNavigate()
   const { lang, isRTL } = useI18n()
-  const c = (COPY as Record<string, typeof COPY.en>)[lang] ?? COPY.en
+  const c = COPY[lang] ?? COPY.en
+
+  const startNewAssessment = () => {
+    localStorage.removeItem('nd_token')
+    localStorage.removeItem('nd_answers')
+    localStorage.removeItem('nd_current_phase')
+    navigate('/assessment')
+  }
 
   return (
     <div className="min-h-screen flex flex-col" dir={isRTL ? 'rtl' : 'ltr'}>
@@ -395,7 +402,7 @@ export default function Home() {
           {/* CTAs */}
           <div className={`flex flex-wrap gap-4 mb-12 ${isRTL ? 'flex-row-reverse' : ''}`}>
             <button
-              onClick={() => navigate('/assessment')}
+              onClick={startNewAssessment}
               className="inline-flex items-center gap-2 px-7 py-3.5 text-sm font-semibold text-white rounded-sm transition-all hover:opacity-90"
               style={{ background: 'var(--brand-red)' }}
             >
@@ -562,7 +569,7 @@ export default function Home() {
             <p className="text-gray-500 text-sm leading-relaxed mb-8">{c.ctaSub}</p>
             <div className={`flex flex-wrap gap-4 mb-6 ${isRTL ? 'flex-row-reverse' : ''}`}>
               <button
-                onClick={() => navigate('/assessment')}
+                onClick={startNewAssessment}
                 className="inline-flex items-center gap-2 px-7 py-3.5 text-sm font-semibold text-white rounded-sm transition-all hover:opacity-90"
                 style={{ background: 'var(--brand-red)' }}
               >

@@ -1,4 +1,4 @@
-import { Link, useLocation } from 'react-router-dom'
+import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { Globe, Menu, X, ChevronDown } from 'lucide-react'
 import { useState, useRef, useEffect } from 'react'
 import { useI18n, type Lang } from '../lib/i18n'
@@ -14,9 +14,18 @@ const LANG_OPTIONS: { code: Lang; label: string; flag: string; native: string }[
 export default function Navbar() {
   const location = useLocation()
   const { t, lang, setLang, isRTL } = useI18n()
+  const navigate = useNavigate()
   const [mobileOpen, setMobileOpen] = useState(false)
   const [langOpen, setLangOpen] = useState(false)
   const langRef = useRef<HTMLDivElement>(null)
+
+  const startNewAssessment = () => {
+    localStorage.removeItem('nd_token')
+    localStorage.removeItem('nd_answers')
+    localStorage.removeItem('nd_current_phase')
+    setMobileOpen(false)
+    navigate('/assessment')
+  }
 
   // Close lang dropdown on outside click
   useEffect(() => {
@@ -98,13 +107,13 @@ export default function Navbar() {
             </div>
 
             {/* CTA */}
-            <Link
-              to="/assessment"
+            <button
+              onClick={startNewAssessment}
               className="hidden md:inline-flex items-center gap-2 px-4 py-2 text-sm font-semibold text-white rounded transition-all hover:opacity-90"
               style={{ background: 'var(--brand-red)' }}
             >
               {t('nav.start')}
-            </Link>
+            </button>
 
             {/* Mobile toggle */}
             <button
@@ -131,14 +140,13 @@ export default function Navbar() {
               {t('nav.home') || 'Home'}
             </Link>
             <div className="pt-2 border-t border-white/10 space-y-2">
-              <Link
-                to="/assessment"
-                onClick={() => setMobileOpen(false)}
-                className="flex items-center justify-center gap-2 px-3 py-2.5 text-sm font-semibold text-white rounded"
+              <button
+                onClick={startNewAssessment}
+                className="w-full flex items-center justify-center gap-2 px-3 py-2.5 text-sm font-semibold text-white rounded"
                 style={{ background: 'var(--brand-red)' }}
               >
                 {t('nav.start')}
-              </Link>
+              </button>
               {/* Mobile lang switcher */}
               <div className="grid grid-cols-5 gap-1 px-1">
                 {LANG_OPTIONS.map(opt => (

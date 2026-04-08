@@ -353,6 +353,19 @@ export default function Results() {
             {/* Actions */}
             <div className="flex flex-col gap-2">
               <button
+                onClick={() => {
+                  localStorage.removeItem('nd_token')
+                  localStorage.removeItem('nd_answers')
+                  localStorage.removeItem('nd_current_phase')
+                  navigate('/assessment')
+                }}
+                className="flex items-center gap-2 px-4 py-2 text-sm font-semibold text-white rounded transition-all hover:opacity-90 shadow-sm"
+                style={{ background: 'var(--brand-red)' }}
+              >
+                {t('results.restart')}
+                <ArrowRight size={14} />
+              </button>
+              <button
                 onClick={() => navigate('/benchmark', { state: { userScore: scores.global } })}
                 className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-white/80 hover:text-white border border-white/20 hover:border-white/40 rounded transition-all"
               >
