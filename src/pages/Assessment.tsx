@@ -127,36 +127,75 @@ function SingleChoiceQuestion({ question, value, onChange, lang }: any) {
 }
 
 function ScaleQuestion({ question, value, onChange, lang }: any) {
+  const { t } = useI18n()
+  const [showHelp, setShowHelp] = useState(false)
   const title = getLocalizedText(question, 'text', lang) || question.text_en
-  const description = getLocalizedText(question, 'description', lang) || question.description_en
+  const help = getLocalizedText(question, 'help', lang) || question.help_en
+  const options = question.options_json || []
+
+  const selectedOption = options.find((opt: any) => opt.value === value)
+  const optionDesc = selectedOption ? (getLocalizedText(selectedOption, 'description', lang) || selectedOption.description_en) : null
 
   return (
     <div className="mb-12 animate-fade-in">
-      <div className="mb-4">
-        <h3 className="text-lg font-bold text-gray-800 leading-tight mb-1">{title}</h3>
-        {description && <p className="text-sm text-gray-400 leading-relaxed">{description}</p>}
-      </div>
-      <div className="flex flex-col sm:flex-row items-center gap-2">
-        <div className="flex-1 grid grid-cols-5 gap-1.5 w-full">
-          {[1, 2, 3, 4, 5].map(num => (
-            <button
-              key={num}
-              onClick={() => onChange(num)}
-              className={`h-12 rounded-xl border-2 font-bold transition-all ${
-                value === num
-                  ? 'border-blue-600 bg-blue-600 text-white shadow-lg shadow-blue-200 scale-105'
-                  : 'border-gray-100 bg-white text-gray-400 hover:border-gray-200 hover:text-gray-600'
-              }`}
-            >
-              {num}
-            </button>
-          ))}
+      <div className="flex items-start gap-3 mb-4">
+        <div className="flex-1">
+          <h3 className="text-lg font-bold text-gray-800 leading-tight mb-1">{title}</h3>
         </div>
-        <div className="flex sm:flex-col justify-between w-full sm:w-auto px-1 sm:h-12 text-[10px] font-bold uppercase tracking-wider text-gray-300">
+        {(help) && (
+          <button
+            onClick={() => setShowHelp(!showHelp)}
+            className={`flex-shrink-0 p-1.5 rounded-lg transition-colors ${
+              showHelp ? 'bg-blue-100 text-blue-600' : 'text-gray-300 hover:text-blue-500'
+            }`}
+          >
+            <Info size={18} />
+          </button>
+        )}
+      </div>
+
+      {showHelp && help && (
+        <div className="mb-6 p-4 rounded-xl bg-blue-50 border border-blue-100 text-sm text-blue-800 leading-relaxed animate-slide-down">
+          {help}
+        </div>
+      )}
+
+      <div className="flex flex-col sm:flex-row items-center gap-4 mb-4">
+        <div className="flex-1 grid grid-cols-5 gap-2 w-full">
+          {[1, 2, 3, 4, 5].map(num => {
+            const isSelected = value === num
+            return (
+              <button
+                key={num}
+                onClick={() => onChange(num)}
+                className={`h-14 rounded-xl border-2 font-bold transition-all flex flex-col items-center justify-center ${
+                  isSelected
+                    ? 'border-blue-600 bg-blue-600 text-white shadow-lg shadow-blue-200 scale-105'
+                    : 'border-gray-100 bg-white text-gray-400 hover:border-gray-200 hover:text-gray-600'
+                }`}
+              >
+                <span className="text-lg">{num}</span>
+              </button>
+            )
+          })}
+        </div>
+        <div className="flex sm:flex-col justify-between w-full sm:w-auto px-1 sm:h-14 text-[10px] font-bold uppercase tracking-wider text-gray-300">
           <span>{lang === 'es' ? 'Bajo' : lang === 'fr' ? 'Faible' : 'Low'}</span>
           <span className="sm:text-right">{lang === 'es' ? 'Alto' : lang === 'fr' ? 'Élevé' : 'High'}</span>
         </div>
       </div>
+
+      {/* Description of the selected level */}
+      {optionDesc && (
+        <div className="p-4 rounded-xl bg-gray-50 border border-gray-100 animate-fade-in">
+          <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-1">
+            {lang === 'es' ? 'Nivel seleccionado' : 'Selected Level'} {value}
+          </p>
+          <p className="text-sm text-gray-700 leading-relaxed font-medium">
+            {optionDesc}
+          </p>
+        </div>
+      )}
     </div>
   )
 }
@@ -363,7 +402,7 @@ export default function Assessment() {
   const saveLabel = lang === 'es' ? 'Guardar y continuar después' :
     lang === 'fr' ? 'Sauvegarder et continuer plus tard' :
     lang === 'ar' ? 'حفظ والمتابعة لاحقاً' :
-    lang === 'ru' ? 'Сохранить и продолжить позже' :
+    lang === 'ru' ? 'Сохранить и continuar позже' :
     'Save & continue later'
 
   return (
@@ -786,6 +825,7 @@ export default function Assessment() {
           </div>
         </div>
       )}
+      <Footer />
     </div>
   )
 }
