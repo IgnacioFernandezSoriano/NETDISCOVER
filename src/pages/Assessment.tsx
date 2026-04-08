@@ -8,10 +8,27 @@ import { useI18n } from '../lib/i18n'
 import { supabase } from '../lib/supabase'
 import { getLocalizedText } from '../lib/i18n'
 import { notifySurveyInProcess, notifySurveyComplete } from '../lib/email'
+import type { Question, Phase, OptionItem } from '../lib/supabase'
+
+// ── Helpers ──────────────────────────────────────────────────────────────────
+
+function getOptionLabel(opt: OptionItem, lang: string): string {
+  if (lang === 'es') return opt.label_es || opt.label_en || String(opt.value)
+  if (lang === 'fr') return opt.label_fr || opt.label_en || opt.label_es || String(opt.value)
+  if (lang === 'ar') return opt.label_ar || opt.label_en || opt.label_es || String(opt.value)
+  if (lang === 'ru') return opt.label_ru || opt.label_en || opt.label_es || String(opt.value)
+  return opt.label_en || opt.label_es || String(opt.value)
+}
+
+function getOptionDesc(opt: OptionItem, lang: string): string {
+  if (lang === 'es') return opt.desc_es || opt.desc_en || ''
+  return opt.desc_en || opt.desc_es || ''
+}
 
 // ── Components ────────────────────────────────────────────────────────────────
 
 function BarrierQuestion({ question, value, onChange, lang }: any) {
+  const { t } = useI18n()
   const title = getLocalizedText(question, 'text', lang) || question.text_en
   const options = question.options_json || [
     { value: 1, label_en: 'Yes', label_es: 'Sí', label_fr: 'Oui' },
@@ -46,6 +63,7 @@ function BarrierQuestion({ question, value, onChange, lang }: any) {
 }
 
 function MultipleChoiceQuestion({ question, value = [], onChange, lang }: any) {
+  const { t } = useI18n()
   const title = getLocalizedText(question, 'text', lang) || question.text_en
   const options = question.options_json || []
 
@@ -60,28 +78,38 @@ function MultipleChoiceQuestion({ question, value = [], onChange, lang }: any) {
 
   return (
     <div className="mb-10 animate-fade-in">
-      <h3 className="text-lg font-bold text-gray-800 mb-4 leading-tight">{title}</h3>
-      <div className="space-y-2 ml-2">
+      <h3 className="text-lg font-bold text-gray-800 mb-2 leading-tight">{title}</h3>
+      <p className="text-xs text-gray-400 mb-4">{lang === 'es' ? 'Puede seleccionar varias opciones' : 'You may select multiple options'}</p>
+      <div className="space-y-2">
         {options.map((opt: any) => {
           const isSelected = Array.isArray(value) && value.includes(String(opt.value))
+          const label = getOptionLabel(opt, lang)
+          const desc = getOptionDesc(opt, lang)
           return (
             <button
               key={opt.value}
               onClick={() => toggleOption(opt.value)}
-              className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl border-2 transition-all text-left ${
+              className={`w-full flex items-start gap-3 px-4 py-3 rounded-xl border-2 transition-all text-left ${
                 isSelected
                   ? 'border-blue-500 bg-blue-50 text-blue-700'
                   : 'border-gray-50 bg-gray-50/50 text-gray-600 hover:border-gray-200'
               }`}
             >
-              <div className={`w-5 h-5 rounded border-2 flex items-center justify-center transition-colors ${
+              <div className={`flex-shrink-0 w-5 h-5 rounded border-2 flex items-center justify-center mt-0.5 transition-colors ${
                 isSelected ? 'bg-blue-500 border-blue-500' : 'bg-white border-gray-300'
               }`}>
                 {isSelected && <CheckCircle size={12} className="text-white" />}
               </div>
-              <span className="text-sm font-medium">
-                {getLocalizedText(opt, 'label', lang) || opt.label_en}
-              </span>
+              <div className="flex-1 min-w-0">
+                <p className={`text-sm font-semibold ${isSelected ? 'text-blue-900' : 'text-gray-800'}`}>
+                  {label}
+                </p>
+                {desc && (
+                  <p className={`text-xs mt-0.5 leading-relaxed ${isSelected ? 'text-blue-700' : 'text-gray-500'}`}>
+                    {desc}
+                  </p>
+                )}
+              </div>
             </button>
           )
         })}
@@ -97,27 +125,36 @@ function SingleChoiceQuestion({ question, value, onChange, lang }: any) {
   return (
     <div className="mb-10 animate-fade-in">
       <h3 className="text-lg font-bold text-gray-800 mb-4 leading-tight">{title}</h3>
-      <div className="space-y-2 ml-2">
+      <div className="space-y-2">
         {options.map((opt: any) => {
           const isSelected = value === opt.value
+          const label = getOptionLabel(opt, lang)
+          const desc = getOptionDesc(opt, lang)
           return (
             <button
               key={opt.value}
               onClick={() => onChange(opt.value)}
-              className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl border-2 transition-all text-left ${
+              className={`w-full flex items-start gap-3 px-4 py-3 rounded-xl border-2 transition-all text-left ${
                 isSelected
                   ? 'border-blue-500 bg-blue-50 text-blue-700'
                   : 'border-gray-50 bg-gray-50/50 text-gray-600 hover:border-gray-200'
               }`}
             >
-              <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center transition-colors ${
+              <div className={`flex-shrink-0 w-5 h-5 rounded-full border-2 flex items-center justify-center mt-0.5 transition-colors ${
                 isSelected ? 'bg-blue-500 border-blue-500' : 'bg-white border-gray-300'
               }`}>
                 {isSelected && <div className="w-2 h-2 rounded-full bg-white" />}
               </div>
-              <span className="text-sm font-medium">
-                {getLocalizedText(opt, 'label', lang) || opt.label_en}
-              </span>
+              <div className="flex-1 min-w-0">
+                <p className={`text-sm font-semibold ${isSelected ? 'text-blue-900' : 'text-gray-800'}`}>
+                  {label}
+                </p>
+                {desc && (
+                  <p className={`text-xs mt-0.5 leading-relaxed ${isSelected ? 'text-blue-700' : 'text-gray-500'}`}>
+                    {desc}
+                  </p>
+                )}
+              </div>
             </button>
           )
         })}
@@ -133,16 +170,13 @@ function ScaleQuestion({ question, value, onChange, lang }: any) {
   const help = getLocalizedText(question, 'help', lang) || question.help_en
   const options = question.options_json || []
 
-  const selectedOption = options.find((opt: any) => opt.value === value)
-  const optionDesc = selectedOption ? (getLocalizedText(selectedOption, 'description', lang) || selectedOption.description_en) : null
-
   return (
     <div className="mb-12 animate-fade-in">
       <div className="flex items-start gap-3 mb-4">
         <div className="flex-1">
           <h3 className="text-lg font-bold text-gray-800 leading-tight mb-1">{title}</h3>
         </div>
-        {(help) && (
+        {help && (
           <button
             onClick={() => setShowHelp(!showHelp)}
             className={`flex-shrink-0 p-1.5 rounded-lg transition-colors ${
@@ -160,40 +194,62 @@ function ScaleQuestion({ question, value, onChange, lang }: any) {
         </div>
       )}
 
-      <div className="flex flex-col sm:flex-row items-center gap-4 mb-4">
-        <div className="flex-1 grid grid-cols-5 gap-2 w-full">
-          {[1, 2, 3, 4, 5].map(num => {
-            const isSelected = value === num
+      {options && options.length > 0 ? (
+        <div className="space-y-2">
+          {options.map((opt: any) => {
+            const numVal = typeof opt.value === 'number' ? opt.value : parseInt(String(opt.value))
+            const label = getOptionLabel(opt, lang)
+            const desc = getOptionDesc(opt, lang)
+            const isSelected = value === numVal
             return (
               <button
-                key={num}
-                onClick={() => onChange(num)}
-                className={`h-14 rounded-xl border-2 font-bold transition-all flex flex-col items-center justify-center ${
+                key={opt.value}
+                onClick={() => onChange(numVal)}
+                className={`w-full text-left px-4 py-3 rounded-xl border-2 transition-all ${
                   isSelected
-                    ? 'border-blue-600 bg-blue-600 text-white shadow-lg shadow-blue-200 scale-105'
-                    : 'border-gray-100 bg-white text-gray-400 hover:border-gray-200 hover:text-gray-600'
+                    ? 'border-blue-600 bg-blue-50'
+                    : 'border-gray-50 bg-gray-50/50 text-gray-600 hover:border-gray-200'
                 }`}
               >
-                <span className="text-lg">{num}</span>
+                <div className="flex items-start gap-3">
+                  <div
+                    className={`flex-shrink-0 w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold mt-0.5 ${
+                      isSelected ? 'text-white' : 'text-gray-500'
+                    }`}
+                    style={isSelected ? { background: 'var(--brand-navy)' } : { background: '#E5E7EB' }}
+                  >
+                    {numVal}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className={`text-sm font-semibold ${isSelected ? 'text-blue-900' : 'text-gray-800'}`}>
+                      {label}
+                    </p>
+                    {desc && (
+                      <p className={`text-xs mt-0.5 leading-relaxed ${isSelected ? 'text-blue-700' : 'text-gray-500'}`}>
+                        {desc}
+                      </p>
+                    )}
+                  </div>
+                </div>
               </button>
             )
           })}
         </div>
-        <div className="flex sm:flex-col justify-between w-full sm:w-auto px-1 sm:h-14 text-[10px] font-bold uppercase tracking-wider text-gray-300">
-          <span>{lang === 'es' ? 'Bajo' : lang === 'fr' ? 'Faible' : 'Low'}</span>
-          <span className="sm:text-right">{lang === 'es' ? 'Alto' : lang === 'fr' ? 'Élevé' : 'High'}</span>
-        </div>
-      </div>
-
-      {/* Description of the selected level */}
-      {optionDesc && (
-        <div className="p-4 rounded-xl bg-gray-50 border border-gray-100 animate-fade-in">
-          <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-1">
-            {lang === 'es' ? 'Nivel seleccionado' : 'Selected Level'} {value}
-          </p>
-          <p className="text-sm text-gray-700 leading-relaxed font-medium">
-            {optionDesc}
-          </p>
+      ) : (
+        <div className="grid grid-cols-5 gap-2">
+          {[1, 2, 3, 4, 5].map(num => (
+            <button
+              key={num}
+              onClick={() => onChange(num)}
+              className={`h-14 rounded-xl border-2 font-bold transition-all ${
+                value === num
+                  ? 'border-blue-600 bg-blue-600 text-white shadow-lg'
+                  : 'border-gray-100 bg-white text-gray-400 hover:border-gray-200'
+              }`}
+            >
+              {num}
+            </button>
+          ))}
         </div>
       )}
     </div>
@@ -402,7 +458,7 @@ export default function Assessment() {
   const saveLabel = lang === 'es' ? 'Guardar y continuar después' :
     lang === 'fr' ? 'Sauvegarder et continuer plus tard' :
     lang === 'ar' ? 'حفظ والمتابعة لاحقاً' :
-    lang === 'ru' ? 'Сохранить и continuar позже' :
+    lang === 'ru' ? 'Сохранить и продолжить позже' :
     'Save & continue later'
 
   return (
