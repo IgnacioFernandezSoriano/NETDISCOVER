@@ -120,6 +120,12 @@ const translations: Record<Lang, Record<string, string>> = {
     // Footer
     'footer.rights': 'All rights reserved.',
     'footer.powered': 'Powered by ONE for Regulators · Universal Postal Union',
+    'results.contact.title': 'Who we are & How we can help',
+    'results.contact.desc': 'The UPU ONE team is dedicated to supporting postal organizations in their journey towards excellence. We provide the tools, expertise, and global framework needed to reach the next level of maturity.',
+    'results.contact.schedule': 'Connect with our experts',
+    'results.contact.role1': 'Postal Quality Expert · UPU',
+    'results.contact.role2': 'Regulatory & Quality Specialist · UPU',
+    'results.contact.teams': 'Chat on Teams',
   },
 
   es: {
@@ -214,6 +220,12 @@ const translations: Record<Lang, Record<string, string>> = {
     'market.sub': 'Descubra soluciones respaldadas por ONE para la medición de calidad postal',
     'footer.rights': 'Todos los derechos reservados.',
     'footer.powered': 'Desarrollado por ONE para Reguladores · Unión Postal Universal',
+    'results.contact.title': 'Quiénes somos y cómo podemos ayudar',
+    'results.contact.desc': 'El equipo ONE de la UPU se dedica a apoyar a las organizaciones postales en su camino hacia la excelencia. Proporcionamos las herramientas, la experiencia y el marco global necesarios para alcanzar el siguiente nivel de madurez.',
+    'results.contact.schedule': 'Conecta con nuestros expertos',
+    'results.contact.role1': 'Experto en Calidad Postal · UPU',
+    'results.contact.role2': 'Especialista en Regulación y Calidad · UPU',
+    'results.contact.teams': 'Chat en Teams',
   },
 
   fr: {
@@ -308,6 +320,12 @@ const translations: Record<Lang, Record<string, string>> = {
     'market.sub': 'Découvrez les solutions approuvées par ONE pour la mesure de la qualité postale',
     'footer.rights': 'Tous droits réservés.',
     'footer.powered': 'Propulsé par ONE pour les Régulateurs · Union Postale Universelle',
+    'results.contact.title': 'Qui nous sommes et comment nous pouvons aider',
+    'results.contact.desc': 'L\'équipe ONE de l\'UPU se consacre à soutenir les organisations postales dans leur cheminement vers l\'excellence. Nous fournissons les outils, l\'expertise et le cadre mondial nécessaires pour atteindre le prochain niveau de maturité.',
+    'results.contact.schedule': 'Connectez-vous avec nos experts',
+    'results.contact.role1': 'Expert en Qualité Postale · UPU',
+    'results.contact.role2': 'Spécialiste de la Réglementation et de la Qualité · UPU',
+    'results.contact.teams': 'Chat sur Teams',
   },
 
   ar: {
@@ -401,7 +419,13 @@ const translations: Record<Lang, Record<string, string>> = {
     'market.title': 'مزودو الحلول',
     'market.sub': 'اكتشف الحلول المعتمدة من ONE لقياس جودة الخدمة البريدية',
     'footer.rights': 'جميع الحقوق محفوظة.',
-    'footer.powered': 'مدعوم من ONE للمنظمين · الاتحاد البريدي العالمي',
+    'footer.powered': 'بدعم من ONE للمنظمين · الاتحاد البريدي العالمي',
+    'results.contact.title': 'من نحن وكيف يمكننا المساعدة',
+    'results.contact.desc': 'فريق ONE التابع للاتحاد البريدي العالمي مكرس لدعم المؤسسات البريدية في رحلتها نحو التميز. نحن نوفر الأدوات والخبرة والإطار العالمي اللازم للوصول إلى المستوى التالي من النضج.',
+    'results.contact.schedule': 'تواصل مع خبرائنا',
+    'results.contact.role1': 'خبير جودة بريدية · الاتحاد البريدي العالمي',
+    'results.contact.role2': 'أخصائي التنظيم والجودة · الاتحاد البريدي العالمي',
+    'results.contact.teams': 'تحدث عبر Teams',
   },
 
   ru: {
@@ -495,7 +519,13 @@ const translations: Record<Lang, Record<string, string>> = {
     'market.title': 'Поставщики решений',
     'market.sub': 'Откройте для себя одобренные ONE решения для измерения качества почтовых услуг',
     'footer.rights': 'Все права защищены.',
-    'footer.powered': 'Разработано ONE для регуляторов · Всемирный почтовый союз',
+    'footer.powered': 'При поддержке ONE para регуляторов · Всемирный почтовый союз',
+    'results.contact.title': 'Кто мы и как мы можем помочь',
+    'results.contact.desc': 'Команда UPU ONE занимается поддержкой почтовых организаций на их пути к совершенству. Мы предоставляем инструменты, опыт и глобальную структуру, необходимые для достижения следующего уровня зрелости.',
+    'results.contact.schedule': 'Свяжитесь с нашими экспертами',
+    'results.contact.role1': 'Эксперт по качеству почты · ВПС',
+    'results.contact.role2': 'Специалист по регулированию и качеству · ВПС',
+    'results.contact.teams': 'Чат в Teams',
   },
 }
 
