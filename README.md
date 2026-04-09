@@ -55,7 +55,28 @@ npm run dev
 
 ---
 
-## 4. Despliegue en Netlify (CI/CD automático)
+## 4. Nota: Netlify Secrets Scanning y VITE_SUPABASE_ANON_KEY
+
+Vite embebe en el bundle JS todas las variables con prefijo `VITE_`, incluida `VITE_SUPABASE_ANON_KEY`. Netlify detecta esto y falla el build con:
+
+```
+Secret env var "VITE_SUPABASE_ANON_KEY"'s value detected in dist/assets/index-*.js
+```
+
+**Esto es comportamiento esperado y seguro.** El `anon key` de Supabase está diseñado para ser público — no otorga acceso privilegiado. La seguridad real la proveen las políticas **RLS** (Row Level Security) configuradas en el schema SQL.
+
+La solución está en `netlify.toml`:
+
+```toml
+[build.environment]
+  SECRETS_SCAN_OMIT_KEYS = "VITE_SUPABASE_ANON_KEY"
+```
+
+Esto le dice a Netlify que omita esa clave del escaneo. **Nunca** añadir `VITE_SUPABASE_SERVICE_ROLE_KEY` ni similares — esas sí son secretas y nunca deben ir al frontend.
+
+---
+
+## 5. Despliegue en Netlify (CI/CD automático)
 
 1. Conecta este repositorio GitHub en Netlify
 2. Configura las variables de entorno (ver tabla arriba)
